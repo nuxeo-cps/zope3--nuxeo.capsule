@@ -42,6 +42,11 @@ class InterfaceTests(unittest.TestCase):
         from nuxeo.capsule import Document
         verifyClass(IDocument, Document)
 
+    def test_Children(self):
+        from nuxeo.capsule.interfaces import IChildren
+        from nuxeo.capsule import Children
+        verifyClass(IChildren, Children)
+
     def test_BinaryField(self):
         from nuxeo.capsule.interfaces import IBinaryField
         from nuxeo.capsule.field import BinaryField

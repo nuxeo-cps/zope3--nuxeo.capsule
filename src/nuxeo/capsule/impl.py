@@ -26,6 +26,7 @@ from nuxeo.capsule.interfaces import IBinaryProperty
 from nuxeo.capsule.interfaces import IListProperty
 from nuxeo.capsule.interfaces import IObjectProperty
 from nuxeo.capsule.interfaces import IDocument
+from nuxeo.capsule.interfaces import IChildren
 
 _MARKER = object()
 
@@ -102,18 +103,19 @@ class Children(Persistent):
 
     If child loading is not lazy, _lazy and _missing are None.
     """
+    zope.interface.implements(IChildren)
+
     __name__ = 'cps:children'
     _lazy = None
     _missing = None
 
     def __init__(self):
-        self._uuid = None # XXX
         self.__parent__ = None
         self._children = {}
         self._order = [] # ordered XXX
 
     def getName(self):
-        return 'cps:children'
+        return self.__name__
 
     def __repr__(self):
         if not self.__name__:
@@ -160,10 +162,24 @@ class Children(Persistent):
         """
         return bool(self._children)
 
-    def addChild(self, type_name):
+    def addChild(self, child):
         """See `nuxeo.capsule.interfaces.IChildren`
         """
-        raise NotImplementedError
+        name = child.getName()
+        if name in self._children:
+            raise KeyError("Child %r already exists" % name)
+        self._children[name] = child
+        if self._order is not None:
+            self._order.append(name)
+
+    def removeChild(self, name):
+        """See `nuxeo.capsule.interfaces.IChildren`
+        """
+        child = self._children[name]
+        del self._children[name]
+        if self._order is not None:
+            self._order.remove(name)
+        return child
 
 
 class Document(ObjectBase, Acquisition.Implicit):
@@ -189,7 +205,6 @@ class Document(ObjectBase, Acquisition.Implicit):
 
     def __init__(self, name, type_name):
         ObjectBase.__init__(self, name, type_name, {})
-        self._uuid = None # XXX
 
     def __repr__(self):
         if not self.__name__:
@@ -216,7 +231,7 @@ class Document(ObjectBase, Acquisition.Implicit):
     def getUUID(self):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
-        return self._uuid
+        raise NotImplementedError
 
     def getParent(self):
         """See `nuxeo.capsule.interfaces.IDocument`
@@ -263,7 +278,12 @@ class Document(ObjectBase, Acquisition.Implicit):
         """
         return self._children.hasChildren()
 
-    def addChild(self, type_name):
+    def addChild(self, name, type_name):
+        """See `nuxeo.capsule.interfaces.IDocument`
+        """
+        raise NotImplementedError
+
+    def removeChild(self, name):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
         raise NotImplementedError
