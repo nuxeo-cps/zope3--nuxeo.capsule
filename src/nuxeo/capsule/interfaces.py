@@ -50,6 +50,12 @@ class IObjectBase(Interface):
 ##         XXX needed?
 ##         """
 
+    def getTypeName():
+        """Get the type of the object.
+
+        Returns a unicode string.
+        """
+
     def getProperties():
         """Get all the properties.
 
@@ -73,6 +79,15 @@ class IObjectBase(Interface):
 
     def setProperty(name, value):
         """Add a new property to the object or modify an existing one.
+
+        If the value is None, the property is removed.
+        """
+
+    def createComplexProperty(name):
+        """Create a complex property.
+
+        Returns an IProperty, or raises KeyError if the property already
+        exists.
         """
 
 ##     def __getattr__(name):
@@ -97,10 +112,17 @@ class IProperty(Interface):
     Properties are compared by object identity XXX or value?
     """
 
+    def getName():
+        """Get the name of the property.
+
+        Returns a unicode string.
+        """
+
+
 class IBinaryProperty(IProperty):
     """A binary object (blob).
 
-    This is specified in a schema using a BinaryField.
+    This is specified in a schema using a IBinaryField.
     """
 
     mime_type = Attribute("The MIME type for this binary")
@@ -122,10 +144,9 @@ class IBinaryProperty(IProperty):
 class IListProperty(IProperty):
     """A complex type that is a list of values.
 
-    Each value is a IProperty or a basic python type.
+    Each value is a IObjectProperty.
 
-    This is specified in a schema using a .
-
+    This is specified in a schema using a IListPropertyField.
     """
 
     def __getitem__(index):
@@ -146,8 +167,20 @@ class IListProperty(IProperty):
         """Get an iterator for the list.
         """
 
+    def getValueTypeName():
+        """Get the type for the values of this list.
+        """
+
+    def addValue():
+        """Add a new empty value to the list.
+
+        Returns an IProperty
+        """
+
 class IObjectProperty(IObjectBase, IProperty):
     """A complex type with fields based on a schema.
+
+    This is specified in a schema using a IObjectPropertyField.
     """
 
 
@@ -177,14 +210,6 @@ class IDocument(IObjectBase):
         """Get the parent document.
 
         Returns a IDocument, or None for the root.
-        """
-
-    ##### Typing
-
-    def getTypeName():
-        """Get the type of the document.
-
-        Returns a unicode string.
         """
 
     ##### Properties: see IObjectBase

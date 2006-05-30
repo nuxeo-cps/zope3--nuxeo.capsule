@@ -48,6 +48,11 @@ class ObjectBase(Persistent):
         self._type_name = type_name
         self._props = mapping.copy()
 
+    def getTypeName(self):
+        """See `nuxeo.capsule.interfaces.IObjectBase`
+        """
+        return self._type_name
+
     def getProperties(self):
         """See `nuxeo.capsule.interfaces.IObjectBase`
         """
@@ -71,8 +76,16 @@ class ObjectBase(Persistent):
     def setProperty(self, name, value):
         """See `nuxeo.capsule.interfaces.IObjectBase`
         """
-        self._p_changed = True
-        self._props[name] = value
+        if value is None:
+            if name in self._props:
+                self._p_changed = True
+                del self._props[name]
+        else:
+            self._p_changed = True
+            self._props[name] = value
+
+    def createComplexProperty(self, name):
+        raise NotImplementedError
 
     def XXX__getattr__(self, name):
         """See `nuxeo.capsule.interfaces.IObjectBase`
@@ -147,9 +160,9 @@ class Children(Persistent):
         """See `nuxeo.capsule.interfaces.IChildren`
         """
         if self._order is None:
-            return self._children.iteritems()
+            return self._children.itervalues()
         else:
-            return [(k, self._children[k]) for k in self._order]
+            return [self._children[k] for k in self._order]
 
     def __contains__(self, name):
         return name in self._children
@@ -237,13 +250,6 @@ class Document(ObjectBase, Acquisition.Implicit):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
         return self.__parent__
-
-    ##### Typing
-
-    def getTypeName(self):
-        """See `nuxeo.capsule.interfaces.IDocument`
-        """
-        return self._type_name
 
     ##### Children
 
@@ -349,12 +355,13 @@ class Document(ObjectBase, Acquisition.Implicit):
                        (escape(str(key)), escape(v)))
 
         res.append("<br/><em>Children:</em><br/>")
-        for key, value in self.getChildren():
-            href = './'+value.getName() # handle : in names
+        for value in self.getChildren():
+            name = value.getName()
+            href = './'+name # handle : in names
             ev = escape(repr(value))
             ev = '<a href="%s/manage_main">%s</a>' % (href, ev)
             res.append('<strong>%s</strong>: %s<br/>' %
-                       (escape(str(key)), ev))
+                       (escape(str(name)), ev))
         res.append('</html>')
         return '\n'.join(res)
 
@@ -366,6 +373,9 @@ class Property(Persistent):
     __name__ = None
     __parent__ = None
     _value = None
+
+    def getName(self):
+        return self.__name__
 
     def __repr__(self):
         return '<%s %s of %r>' % (
@@ -409,8 +419,10 @@ class ListProperty(Property):
     """
     zope.interface.implements(IListProperty)
 
-    def __init__(self, values):
-        self._values = list(values)
+    def __init__(self, name, value_type_name, values=None):
+        self.__name__ = name
+        self._value_type_name = value_type_name
+        self._values = list(values or ())
 
     def __getitem__(self, index):
         """See `nuxeo.capsule.interfaces.IListProperty`
@@ -432,6 +444,15 @@ class ListProperty(Property):
         """
         return iter(self._values)
 
+    def getValueTypeName(self):
+        """Get the type for the values of this list.
+        """
+        return self._value_type_name
+
+    def addValue(self):
+        """See `nuxeo.capsule.interfaces.IListProperty`
+        """
+        raise NotImplementedError
 
 class ObjectProperty(ObjectBase, Property):
     """A complex type with fields based on a schema.
