@@ -379,7 +379,7 @@ class ITypeManager(Interface):
         Returns a mapping of name to IType.
         """
 
-    def getType(name):
+    def getType(name, default=_MARKER):
         """Get a type corresponding to a type name.
 
         Returns a IType.
@@ -404,6 +404,16 @@ class IType(Interface):
 
         The fields may correspond to simple types, or be Object fields
         themselves requiring sub-schemas.
+        """
+
+    def getClass():
+        """Get the class associated with this type.
+
+        Returns a class.
+        """
+
+    def setClass(klass):
+        """Set the class associated with this type.
         """
 
     def isContainer():

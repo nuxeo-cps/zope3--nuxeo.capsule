@@ -21,6 +21,9 @@ from nuxeo.capsule.interfaces import IType
 from nuxeo.capsule.interfaces import ITypeManager
 
 
+_MARKER = object()
+
+
 class TypeManager(object):
     """A Type Manager knows about registered document types.
     """
@@ -34,10 +37,15 @@ class TypeManager(object):
         """
         return self._types.copy()
 
-    def getType(self, name):
+    def getType(self, name, default=_MARKER):
         """See `nuxeo.capsule.interfaces.ITypeManager`
         """
-        return self._types[name]
+        try:
+            return self._types[name]
+        except KeyError:
+            if default is not _MARKER:
+                return default
+            raise
 
     # Management
 
@@ -55,9 +63,10 @@ class Type(object):
     """
     zope.interface.implements(IType)
 
-    def __init__(self, name, schema, container=False, ordered=False):
+    def __init__(self, name, schema, klass, container=False, ordered=False):
         self._name = name
         self._schema = schema
+        self._klass = klass
         self._is_container = container
         self._is_ordered = ordered
 
@@ -70,6 +79,16 @@ class Type(object):
         """See `nuxeo.capsule.interfaces.IType`
         """
         return self._schema
+
+    def getClass(self):
+        """See `nuxeo.capsule.interfaces.IType`
+        """
+        return self._klass
+
+    def setClass(self, klass):
+        """See `nuxeo.capsule.interfaces.IType`
+        """
+        self._klass = klass
 
     def isContainer(self):
         """See `nuxeo.capsule.interfaces.IType`
