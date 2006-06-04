@@ -39,16 +39,14 @@ class IObjectBase(Interface):
     """An object with properties based on a schema.
     """
 
-##     def getSchema():
-##         """Get the schema on which this object is based.
-##
-##         Returns a IInterface, whose fields describe the schema.
-##
-##         The object also implements the interface in a standard manner
-##         for the component architecture.
-##
-##         XXX needed?
-##         """
+    def getSchema():
+        """Get the schema on which this object is based.
+
+        Returns a IInterface, whose fields describe the schema.
+
+        The object also implements the interface in a standard manner
+        for the component architecture.
+        """
 
     def getTypeName():
         """Get the type of the object.
@@ -83,13 +81,6 @@ class IObjectBase(Interface):
         If the value is None, the property is removed.
         """
 
-    def createComplexProperty(name):
-        """Create a complex property.
-
-        Returns an IProperty, or raises KeyError if the property already
-        exists.
-        """
-
 ##     def __getattr__(name):
 ##         """Get a specific field.
 ##
@@ -116,6 +107,18 @@ class IProperty(Interface):
         """Get the name of the property.
 
         Returns a unicode string.
+        """
+
+    def setValue(value):
+        """Set the value of a property.
+
+        `value` is a basic python datastructure.
+        """
+
+    def getValue():
+        """Get the value of a property.
+
+        Returns a basic python datastructure.
         """
 
 
@@ -167,8 +170,8 @@ class IListProperty(IProperty):
         """Get an iterator for the list.
         """
 
-    def getValueTypeName():
-        """Get the type for the values of this list.
+    def getValueSchema():
+        """Get the schema for the values of this list.
         """
 
     def addValue():
@@ -432,14 +435,18 @@ class IType(Interface):
 ##################################################
 # Schemas Fields
 
-class IBinaryField(IMinMaxLen):
+class ICapsuleField(Interface):
+    """Marker interface for complex Capsule fields.
+    """
+
+class IBinaryField(IMinMaxLen, ICapsuleField):
     """Schema field containing a seekable file-like object.
     """
 
-class IListPropertyField(IList):
+class IListPropertyField(IList, ICapsuleField):
     """Schema field containing a persistent list of objects.
     """
 
-class IObjectPropertyField(IObject):
+class IObjectPropertyField(IObject, ICapsuleField):
     """Schema field containing a schema-based object.
     """

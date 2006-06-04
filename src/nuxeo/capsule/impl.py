@@ -41,17 +41,22 @@ class ObjectBase(Persistent):
 
     __name__ = None
     __parent__ = None
-    _type_name = None
+    _schema = None
 
-    def __init__(self, name, type_name, mapping):
+    def __init__(self, name, schema, mapping):
         self.__name__ = name
-        self._type_name = type_name
+        self._schema = schema
         self._props = mapping.copy()
+
+    def getSchema(self):
+        """See `nuxeo.capsule.interfaces.IObjectBase`
+        """
+        return self._schema
 
     def getTypeName(self):
         """See `nuxeo.capsule.interfaces.IObjectBase`
         """
-        return self._type_name
+        return self.getSchema().getName()
 
     def getProperties(self):
         """See `nuxeo.capsule.interfaces.IObjectBase`
@@ -83,9 +88,6 @@ class ObjectBase(Persistent):
         else:
             self._p_changed = True
             self._props[name] = value
-
-    def createComplexProperty(self, name):
-        raise NotImplementedError
 
     def XXX__getattr__(self, name):
         """See `nuxeo.capsule.interfaces.IObjectBase`
@@ -216,8 +218,8 @@ class Document(ObjectBase, Acquisition.Implicit):
 
     _children = None
 
-    def __init__(self, name, type_name):
-        ObjectBase.__init__(self, name, type_name, {})
+    def __init__(self, name, schema):
+        ObjectBase.__init__(self, name, schema, {})
 
     def __repr__(self):
         if not self.__name__:
@@ -398,6 +400,16 @@ class BinaryProperty(Property):
         self.mime_type = mime_type
         self.encoding = encoding
 
+    def setValue(self, value):
+        """See `nuxeo.capsule.interfaces.IProperty`
+        """
+        raise NotImplementedError
+
+    def getValue(self):
+        """See `nuxeo.capsule.interfaces.IProperty`
+        """
+        raise NotImplementedError
+
     def open(self):
         """See `nuxeo.capsule.interfaces.IBinaryProperty`
         """
@@ -419,10 +431,27 @@ class ListProperty(Property):
     """
     zope.interface.implements(IListProperty)
 
-    def __init__(self, name, value_type_name, values=None):
+    def __init__(self, name, value_schema, values=None):
         self.__name__ = name
-        self._value_type_name = value_type_name
-        self._values = list(values or ())
+        self._value_schema = value_schema
+        self.setValue(values or ())
+
+    def setValue(self, value):
+        """See `nuxeo.capsule.interfaces.IProperty`
+        """
+        raise NotImplementedError
+
+    def getValue(self):
+        """See `nuxeo.capsule.interfaces.IProperty`
+
+        Returns a list of python simple types.
+        """
+        value = []
+        for v in self._values:
+            if IProperty.providedBy(v):
+                v = v.getValue()
+            value.append(v)
+        return value
 
     def __getitem__(self, index):
         """See `nuxeo.capsule.interfaces.IListProperty`
@@ -444,10 +473,10 @@ class ListProperty(Property):
         """
         return iter(self._values)
 
-    def getValueTypeName(self):
+    def getValueSchema(self):
         """Get the type for the values of this list.
         """
-        return self._value_type_name
+        return self._value_schema
 
     def addValue(self):
         """See `nuxeo.capsule.interfaces.IListProperty`
@@ -458,3 +487,24 @@ class ObjectProperty(ObjectBase, Property):
     """A complex type with fields based on a schema.
     """
     zope.interface.implements(IObjectProperty)
+
+    def setValue(self, value):
+        """See `nuxeo.capsule.interfaces.IProperty`
+
+        `value` is a mapping.
+        """
+        # XXX clear other props before?
+        for k, v in value.iteritems():
+            self.setProperty(k, v)
+
+    def getValue(self):
+        """See `nuxeo.capsule.interfaces.IProperty`
+
+        Returns a mapping.
+        """
+        value = {}
+        for k, v in self._props.iteritems():
+            if IProperty.providedBy(v):
+                v = v.getValue()
+            value[k] = v
+        return value
