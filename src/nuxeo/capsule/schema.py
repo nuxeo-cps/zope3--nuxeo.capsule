@@ -47,9 +47,13 @@ class SchemaManager(object):
 
     # Management
 
-    def addSchema(self, name, schema):
+    def addSchema(self, schema):
+        name = schema.getName()
         if name in self._schemas:
             raise ValueError("Schema %r already registered" % name)
         if not IInterface.providedBy(schema):
             raise ValueError("Schema %r is not an Interface" % name)
         self._schemas[name] = schema
+
+    def _clear(self):
+        self._schemas = {}

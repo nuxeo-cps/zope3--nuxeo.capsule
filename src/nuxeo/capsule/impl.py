@@ -40,14 +40,15 @@ class ObjectBase(Persistent):
     """
     zope.interface.implements(IObjectBase)
 
-    __name__ = None
     __parent__ = None
-    _schema = None
 
     def __init__(self, name, schema, mapping=None):
         self.__name__ = name
-        self._schema = schema
+        self._setSchema(schema)
         self._props = (mapping or {}).copy()
+
+    def _setSchema(self, schema):
+        self._schema = schema
 
     def getSchema(self):
         """See `nuxeo.capsule.interfaces.IObjectBase`
@@ -350,12 +351,10 @@ class Document(ObjectBase, Acquisition.Implicit):
 
         res.append("<br/><em>Properties:</em><br/>")
         for key, value in sorted(self.getProperties().items()):
-            try:
-                v = repr(value._value)
-            except AttributeError:
-                v = '?'
+            if IProperty.providedBy(value):
+                value = value.getPythonValue()
             res.append('<strong>%s</strong>: %s<br/>' %
-                       (escape(str(key)), escape(v)))
+                       (escape(str(key)), escape(repr(value))))
 
         res.append("<br/><em>Children:</em><br/>")
         for value in self.getChildren():
@@ -430,8 +429,16 @@ class ListProperty(Property):
 
     def __init__(self, name, value_schema, values=None):
         self.__name__ = name
-        self._value_schema = value_schema
+        self._setValueSchema(value_schema)
         self._values = list(values or ())
+
+    def _setValueSchema(self, schema):
+        self._value_schema = schema
+
+    def getValueSchema(self):
+        """See `nuxeo.capsule.interfaces.IListProperty`
+        """
+        return self._value_schema
 
     def _createItem(self, value):
         """Create one item from a python value.
@@ -489,11 +496,6 @@ class ListProperty(Property):
         """See `nuxeo.capsule.interfaces.IListProperty`
         """
         return iter(self._values)
-
-    def getValueSchema(self):
-        """See `nuxeo.capsule.interfaces.IListProperty`
-        """
-        return self._value_schema
 
 
 class ObjectProperty(ObjectBase, Property):
