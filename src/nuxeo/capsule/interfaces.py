@@ -109,13 +109,13 @@ class IProperty(Interface):
         Returns a unicode string.
         """
 
-    def setValue(value):
+    def setPythonValue(value):
         """Set the value of a property.
 
         `value` is a basic python datastructure.
         """
 
-    def getValue():
+    def getPythonValue():
         """Get the value of a property.
 
         Returns a basic python datastructure.

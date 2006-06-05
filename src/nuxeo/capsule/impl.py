@@ -22,11 +22,12 @@ from cStringIO import StringIO
 
 import zope.interface
 from nuxeo.capsule.interfaces import IObjectBase
+from nuxeo.capsule.interfaces import IDocument
+from nuxeo.capsule.interfaces import IChildren
+from nuxeo.capsule.interfaces import IProperty
 from nuxeo.capsule.interfaces import IBinaryProperty
 from nuxeo.capsule.interfaces import IListProperty
 from nuxeo.capsule.interfaces import IObjectProperty
-from nuxeo.capsule.interfaces import IDocument
-from nuxeo.capsule.interfaces import IChildren
 
 _MARKER = object()
 
@@ -43,10 +44,10 @@ class ObjectBase(Persistent):
     __parent__ = None
     _schema = None
 
-    def __init__(self, name, schema, mapping):
+    def __init__(self, name, schema, mapping=None):
         self.__name__ = name
         self._schema = schema
-        self._props = mapping.copy()
+        self._props = (mapping or {}).copy()
 
     def getSchema(self):
         """See `nuxeo.capsule.interfaces.IObjectBase`
@@ -380,8 +381,14 @@ class Property(Persistent):
         return self.__name__
 
     def __repr__(self):
-        return '<%s %s of %r>' % (
+        return '<%s %r of %r>' % (
             self.__class__.__name__, self.__name__, self.__parent__)
+
+    def setPythonValue(self, value):
+        raise NotImplementedError
+
+    def getPythonValue(self):
+        raise NotImplementedError
 
 
 class BinaryProperty(Property):
@@ -399,16 +406,6 @@ class BinaryProperty(Property):
         self._len = len(data)
         self.mime_type = mime_type
         self.encoding = encoding
-
-    def setValue(self, value):
-        """See `nuxeo.capsule.interfaces.IProperty`
-        """
-        raise NotImplementedError
-
-    def getValue(self):
-        """See `nuxeo.capsule.interfaces.IProperty`
-        """
-        raise NotImplementedError
 
     def open(self):
         """See `nuxeo.capsule.interfaces.IBinaryProperty`
@@ -434,14 +431,14 @@ class ListProperty(Property):
     def __init__(self, name, value_schema, values=None):
         self.__name__ = name
         self._value_schema = value_schema
-        self.setValue(values or ())
+        self._values = list(values or ())
 
-    def setValue(self, value):
-        """See `nuxeo.capsule.interfaces.IProperty`
+    def _createItem(self, value):
+        """Create one item from a python value.
         """
-        raise NotImplementedError
+        raise NotImplementedError("Must be subclassed")
 
-    def getValue(self):
+    def getPythonValue(self):
         """See `nuxeo.capsule.interfaces.IProperty`
 
         Returns a list of python simple types.
@@ -449,9 +446,29 @@ class ListProperty(Property):
         value = []
         for v in self._values:
             if IProperty.providedBy(v):
-                v = v.getValue()
+                v = v.getPythonValue()
             value.append(v)
         return value
+
+    def setPythonValue(self, value):
+        """See `nuxeo.capsule.interfaces.IProperty`
+
+        `value` is a list of python simple types.
+        """
+        l = []
+        for v in value:
+            if isinstance(v, dict):
+                v = self._createItem(v)
+            l.append(v)
+        self._values = l
+
+    def addValue(self):
+        """See `nuxeo.capsule.interfaces.IListProperty`
+        """
+        ob = self._createItem({})
+        self._p_changed = True
+        self._values.append(ob)
+        return ob
 
     def __getitem__(self, index):
         """See `nuxeo.capsule.interfaces.IListProperty`
@@ -474,21 +491,17 @@ class ListProperty(Property):
         return iter(self._values)
 
     def getValueSchema(self):
-        """Get the type for the values of this list.
+        """See `nuxeo.capsule.interfaces.IListProperty`
         """
         return self._value_schema
 
-    def addValue(self):
-        """See `nuxeo.capsule.interfaces.IListProperty`
-        """
-        raise NotImplementedError
 
 class ObjectProperty(ObjectBase, Property):
     """A complex type with fields based on a schema.
     """
     zope.interface.implements(IObjectProperty)
 
-    def setValue(self, value):
+    def setPythonValue(self, value):
         """See `nuxeo.capsule.interfaces.IProperty`
 
         `value` is a mapping.
@@ -497,7 +510,7 @@ class ObjectProperty(ObjectBase, Property):
         for k, v in value.iteritems():
             self.setProperty(k, v)
 
-    def getValue(self):
+    def getPythonValue(self):
         """See `nuxeo.capsule.interfaces.IProperty`
 
         Returns a mapping.
@@ -505,6 +518,6 @@ class ObjectProperty(ObjectBase, Property):
         value = {}
         for k, v in self._props.iteritems():
             if IProperty.providedBy(v):
-                v = v.getValue()
+                v = v.getPythonValue()
             value[k] = v
         return value
