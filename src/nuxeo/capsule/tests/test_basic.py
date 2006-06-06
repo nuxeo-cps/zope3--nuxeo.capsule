@@ -24,27 +24,27 @@ class InterfaceTests(unittest.TestCase):
 
     def test_BinaryProperty(self):
         from nuxeo.capsule.interfaces import IBinaryProperty
-        from nuxeo.capsule import BinaryProperty
+        from nuxeo.capsule.base import BinaryProperty
         verifyClass(IBinaryProperty, BinaryProperty)
 
     def test_ListProperty(self):
         from nuxeo.capsule.interfaces import IListProperty
-        from nuxeo.capsule import ListProperty
+        from nuxeo.capsule.base import ListProperty
         verifyClass(IListProperty, ListProperty)
 
     def test_ObjectProperty(self):
         from nuxeo.capsule.interfaces import IObjectProperty
-        from nuxeo.capsule import ObjectProperty
+        from nuxeo.capsule.base import ObjectProperty
         verifyClass(IObjectProperty, ObjectProperty)
 
     def test_Document(self):
         from nuxeo.capsule.interfaces import IDocument
-        from nuxeo.capsule import Document
+        from nuxeo.capsule.base import Document
         verifyClass(IDocument, Document)
 
     def test_Children(self):
         from nuxeo.capsule.interfaces import IChildren
-        from nuxeo.capsule import Children
+        from nuxeo.capsule.base import Children
         verifyClass(IChildren, Children)
 
     def test_BinaryField(self):

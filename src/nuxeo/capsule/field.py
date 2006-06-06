@@ -26,9 +26,9 @@ from nuxeo.capsule.interfaces import IBinaryField
 from nuxeo.capsule.interfaces import IListPropertyField
 from nuxeo.capsule.interfaces import IObjectPropertyField
 
-from nuxeo.capsule import BinaryProperty
-from nuxeo.capsule import ListProperty
-from nuxeo.capsule import ObjectProperty
+from nuxeo.capsule.base import BinaryProperty
+from nuxeo.capsule.base import ListProperty
+from nuxeo.capsule.base import ObjectProperty
 
 
 class BinaryField(MinMaxLen, Field):

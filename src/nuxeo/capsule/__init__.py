@@ -13,11 +13,5 @@
 ##############################################################################
 # Author: Florent Guillaume <fg@nuxeo.com>
 # $Id$
-"""Capsule convenience imports.
+"""Capsule.
 """
-
-from nuxeo.capsule.impl import BinaryProperty
-from nuxeo.capsule.impl import ListProperty
-from nuxeo.capsule.impl import ObjectProperty
-from nuxeo.capsule.impl import Document
-from nuxeo.capsule.impl import Children
