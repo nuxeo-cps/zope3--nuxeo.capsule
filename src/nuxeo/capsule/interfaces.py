@@ -187,6 +187,16 @@ class IObjectProperty(IObjectBase, IProperty):
     """
 
 
+class IReference(Interface):
+    """A reference to another object by UUID.
+    """
+    def getTargetUUID():
+        """Get the UUID to which this object refers.
+
+        Returns a python string.
+        """
+
+
 ##################################################
 # Documents
 
@@ -449,4 +459,8 @@ class IListPropertyField(IList, ICapsuleField):
 
 class IObjectPropertyField(IObject, ICapsuleField):
     """Schema field containing a schema-based object.
+    """
+
+class IReferenceField(Interface):
+    """Schema field containing a capsule reference.
     """

@@ -17,6 +17,7 @@
 """
 
 import unittest
+from zope.testing.doctest import DocTestSuite
 from zope.interface.verify import verifyClass
 
 
@@ -57,6 +58,16 @@ class InterfaceTests(unittest.TestCase):
         from nuxeo.capsule.field import ListPropertyField
         verifyClass(IListPropertyField, ListPropertyField)
 
+    def test_ObjectPropertyField(self):
+        from nuxeo.capsule.interfaces import IObjectPropertyField
+        from nuxeo.capsule.field import ObjectPropertyField
+        verifyClass(IObjectPropertyField, ObjectPropertyField)
+
+    def test_ReferenceField(self):
+        from nuxeo.capsule.interfaces import IReferenceField
+        from nuxeo.capsule.field import ReferenceField
+        verifyClass(IReferenceField, ReferenceField)
+
     def test_Type(self):
         from nuxeo.capsule.interfaces import IType
         from nuxeo.capsule.type import Type
@@ -72,9 +83,35 @@ class InterfaceTests(unittest.TestCase):
         from nuxeo.capsule.schema import SchemaManager
         verifyClass(ISchemaManager, SchemaManager)
 
+
+    def test_Reference(self):
+        from nuxeo.capsule.interfaces import IReference
+        from nuxeo.capsule.base import Reference
+        verifyClass(IReference, Reference)
+
+
+def test_Reference():
+    """
+    >>> from nuxeo.capsule.base import Reference
+    >>> r = Reference('abc-def')
+    >>> r
+    Reference('abc-def')
+    >>> r.getTargetUUID()
+    'abc-def'
+    >>> cmp(r, None), cmp(None, r)
+    (1, -1)
+    >>> cmp(r, 123), cmp(123, r)
+    (1, -1)
+    >>> r1, r2 = Reference('abc'), Reference('abc')
+    >>> r1 == r2, r1 is r2
+    (True, False)
+
+    """
+
 def test_suite():
     return unittest.TestSuite((
         unittest.makeSuite(InterfaceTests),
+        DocTestSuite(),
         ))
 
 if __name__ == '__main__':

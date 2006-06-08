@@ -25,10 +25,12 @@ from zope.schema import Object
 from nuxeo.capsule.interfaces import IBinaryField
 from nuxeo.capsule.interfaces import IListPropertyField
 from nuxeo.capsule.interfaces import IObjectPropertyField
+from nuxeo.capsule.interfaces import IReferenceField
 
 from nuxeo.capsule.base import BinaryProperty
 from nuxeo.capsule.base import ListProperty
 from nuxeo.capsule.base import ObjectProperty
+from nuxeo.capsule.base import Reference
 
 
 class BinaryField(MinMaxLen, Field):
@@ -49,3 +51,10 @@ class ObjectPropertyField(Object):
     """
     zope.interface.implements(IObjectPropertyField)
     _type = ObjectProperty
+
+
+class ReferenceField(Field):
+    """A field containing a capsule reference.
+    """
+    zope.interface.implements(IReferenceField)
+    _type = Reference

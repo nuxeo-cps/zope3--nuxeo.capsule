@@ -28,6 +28,7 @@ from nuxeo.capsule.interfaces import IProperty
 from nuxeo.capsule.interfaces import IBinaryProperty
 from nuxeo.capsule.interfaces import IListProperty
 from nuxeo.capsule.interfaces import IObjectProperty
+from nuxeo.capsule.interfaces import IReference
 
 _MARKER = object()
 
@@ -370,6 +371,8 @@ class Document(ObjectBase, Acquisition.Implicit):
 
 class Property(Persistent):
     """Base class for a Property.
+
+    A property has its own individual persistence in the storage.
     """
 
     __name__ = None
@@ -523,3 +526,25 @@ class ObjectProperty(ObjectBase, Property):
                 v = v.getPythonValue()
             value[k] = v
         return value
+
+
+class Reference(object):
+    """A reference to another object through its UUID.
+    """
+    zope.interface.implements(IReference)
+
+    def __init__(self, uuid):
+        self._target = uuid
+
+    def getTargetUUID(self):
+        """See `nuxeo.capsule.interfaces.IReference`.
+        """
+        return self._target
+
+    def __repr__(self):
+        return "Reference('%s')" % self._target
+
+    def __cmp__(self, other):
+        if not isinstance(other, Reference):
+            return 1
+        return cmp(self._target, other.getTargetUUID())
