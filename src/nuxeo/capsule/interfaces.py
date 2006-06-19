@@ -366,6 +366,8 @@ class IChildren(Interface):
 
 class ISchemaManager(Interface):
     """A Schema Manager knows about registered schemas.
+
+    It holds a schema and a class for each type name.
     """
 
     def getSchemas():
@@ -374,73 +376,32 @@ class ISchemaManager(Interface):
         Returns a mapping of name to Interface.
         """
 
-    def getSchema(name, default):
+    def getSchema(name, default=_MARKER):
         """Get a schema corresponding to a schema name.
 
         Returns an Interface.
         """
 
-
-
-class ITypeManager(Interface):
-    """A Type Manager knows about registered document types.
-    """
-
-    def getTypes():
-        """Get all the types.
-
-        Returns a mapping of name to IType.
-        """
-
-    def getType(name, default=_MARKER):
-        """Get a type corresponding to a type name.
-
-        Returns a IType.
-        """
-
-
-
-class IType(Interface):
-    """A Type describes how a document is organized.
-    """
-
-    def getName():
-        """Get the name of a type.
-
-        Returns a unicode string.
-        """
-
-    def getSchema():
-        """Get the schema associated with this type.
-
-        Returns a IInterface, whose fields describe the schema.
-
-        The fields may correspond to simple types, or be Object fields
-        themselves requiring sub-schemas.
-        """
-
-    def getClass():
-        """Get the class associated with this type.
+    def getClass(name, default=_MARKER):
+        """Get a class corresponding to a type name.
 
         Returns a class.
         """
 
-    def setClass(klass):
-        """Set the class associated with this type.
+    def addSchema(schema, klass=None):
+        """Add a new schema.
         """
 
-    def isContainer():
-        """Test if this type is a container.
-
-        Returns a boolean.
+    def setClass(name, klass):
+        """Set the class for an already defined schema.
         """
 
-    def isOrderedContainer():
-        """Test if a container type is ordered.
+    def setDefaultClass(klass):
+        """Set the default class.
 
-        Returns a boolean.
+        All schema currently using the default class will be fixed to
+        any preexisting default.
         """
-
 
 ##################################################
 # Schemas Fields

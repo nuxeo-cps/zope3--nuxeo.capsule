@@ -68,16 +68,6 @@ class InterfaceTests(unittest.TestCase):
         from nuxeo.capsule.field import ReferenceField
         verifyClass(IReferenceField, ReferenceField)
 
-    def test_Type(self):
-        from nuxeo.capsule.interfaces import IType
-        from nuxeo.capsule.type import Type
-        verifyClass(IType, Type)
-
-    def test_TypeManager(self):
-        from nuxeo.capsule.interfaces import ITypeManager
-        from nuxeo.capsule.type import TypeManager
-        verifyClass(ITypeManager, TypeManager)
-
     def test_SchemaManager(self):
         from nuxeo.capsule.interfaces import ISchemaManager
         from nuxeo.capsule.schema import SchemaManager
