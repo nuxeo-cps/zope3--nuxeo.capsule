@@ -69,7 +69,7 @@ class SchemaManager(object):
 
     # Management
 
-    def addSchema(self, schema, klass=None):
+    def addSchema(self, schema):
         """See `nuxeo.capsule.interfaces.ISchemaManager`
         """
         name = schema.getName()
@@ -78,14 +78,13 @@ class SchemaManager(object):
         if not IInterface.providedBy(schema):
             raise ValueError("Schema %r is not an Interface" % name)
         self._schemas[name] = schema
-        self._classes[name] = klass
+        if name not in self._classes:
+            self._classes[name] = None
 
     def setClass(self, name, klass):
         """See `nuxeo.capsule.interfaces.ISchemaManager`
         """
-        if name not in self._classes:
-            raise ValueError("Schema %r not registered" % name)
-        if self._classes[name] is not None:
+        if self._classes.get(name) is not None:
             raise ValueError("Class %r already registered" % name)
         self._classes[name] = klass
 

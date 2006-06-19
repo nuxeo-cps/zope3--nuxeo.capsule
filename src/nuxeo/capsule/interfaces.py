@@ -388,7 +388,7 @@ class ISchemaManager(Interface):
         Returns a class.
         """
 
-    def addSchema(schema, klass=None):
+    def addSchema(schema):
         """Add a new schema.
         """
 
