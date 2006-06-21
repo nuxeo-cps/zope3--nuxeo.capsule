@@ -43,10 +43,10 @@ class ObjectBase(Persistent):
 
     __parent__ = None
 
-    def __init__(self, name, schema, mapping=None):
+    def __init__(self, name, schema):
         self.__name__ = name
         self._setSchema(schema)
-        self._props = (mapping or {}).copy()
+        self._props = {}
 
     def _setSchema(self, schema):
         self._schema = schema
@@ -222,7 +222,7 @@ class Document(ObjectBase, Acquisition.Implicit):
     _children = None
 
     def __init__(self, name, schema):
-        ObjectBase.__init__(self, name, schema, {})
+        ObjectBase.__init__(self, name, schema)
 
     def __repr__(self):
         if not self.__name__:
@@ -377,7 +377,7 @@ class Property(Persistent):
 
     __name__ = None
     __parent__ = None
-    _value = None
+    #_value = None # XXX
 
     def getName(self):
         return self.__name__
@@ -443,8 +443,8 @@ class ListProperty(Property):
         """
         return self._value_schema
 
-    def _createItem(self, value):
-        """Create one item from a python value.
+    def _createItem(self):
+        """Create one item for the list.
         """
         raise NotImplementedError("Must be subclassed")
 
@@ -468,14 +468,16 @@ class ListProperty(Property):
         l = []
         for v in value:
             if isinstance(v, dict):
-                v = self._createItem(v)
+                item = self._createItem()
+                item.setPythonValue(v)
+                v = item
             l.append(v)
         self._values = l
 
     def addValue(self):
         """See `nuxeo.capsule.interfaces.IListProperty`
         """
-        ob = self._createItem({})
+        ob = self._createItem()
         self._p_changed = True
         self._values.append(ob)
         return ob
