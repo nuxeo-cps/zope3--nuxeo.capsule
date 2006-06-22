@@ -128,24 +128,30 @@ class Children(Persistent):
     _lazy = None
     _missing = None
 
-    def __init__(self):
-        self.__parent__ = None
+    def __init__(self, parent):
+        self.__parent__ = parent
         self._children = {}
         self._order = [] # ordered XXX
 
     def getName(self):
         return self.__name__
 
+
+    def getTypeName(self):
+        """See `nuxeo.capsule.interfaces.IChildren`
+        """
+        raise NotImplementedError
+
+    def _getPath(self, first=False):
+        ppath = self.__parent__._getPath()
+        if first:
+            return ppath + (self.__name__,)
+        else:
+            return ppath
+
     def __repr__(self):
-        if not self.__name__:
-            return '<%s at />' % self.__class__.__name__
-        path = []
-        current = self
-        while current is not None:
-            path.append(current.getName())
-            current = current.__parent__
-        path.reverse()
-        return '<%s at %s>' % (self.__class__.__name__, '/'.join(path))
+        path = '/'.join(self._getPath(True))
+        return '<%s at %s>' % (self.__class__.__name__, path)
 
     def getChild(self, name, default=_MARKER):
         """See `nuxeo.capsule.interfaces.IChildren`
@@ -181,15 +187,10 @@ class Children(Persistent):
         """
         return bool(self._children)
 
-    def addChild(self, child):
+    def addChild(self, name, type_name):
         """See `nuxeo.capsule.interfaces.IChildren`
         """
-        name = child.getName()
-        if name in self._children:
-            raise KeyError("Child %r already exists" % name)
-        self._children[name] = child
-        if self._order is not None:
-            self._order.append(name)
+        raise NotImplementedError
 
     def removeChild(self, name):
         """See `nuxeo.capsule.interfaces.IChildren`
@@ -225,16 +226,17 @@ class Document(ObjectBase, Acquisition.Implicit):
     def __init__(self, name, schema):
         ObjectBase.__init__(self, name, schema)
 
+    def _getPath(self, first=False):
+        if self.__parent__ is None:
+            return (self.__name__,)
+        else:
+            return self.__parent__._getPath() + (self.__name__,)
+
     def __repr__(self):
-        if not self.__name__:
-            return '<%s at />' % self.__class__.__name__
-        path = []
-        current = self
-        while current is not None:
-            path.append(current.getName())
-            current = current.__parent__
-        path.reverse()
-        return '<%s at %s>' % (self.__class__.__name__, '/'.join(path))
+        path = '/'.join(self._getPath(True))
+        if not path:
+            path = '/'
+        return '<%s at %s>' % (self.__class__.__name__, path)
 
     def __nonzero__(self):
         # Always return true, even for empty folders
@@ -255,7 +257,12 @@ class Document(ObjectBase, Acquisition.Implicit):
     def getParent(self):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
-        return self.__parent__
+        parent = self.__parent__
+        if IChildren.providedBy(parent):
+            parent = parent.__parent__
+        elif parent is not None:
+            print 'XXX doc parent is not IChildren but %r' % parent
+        return parent
 
     ##### Children
 
@@ -293,12 +300,12 @@ class Document(ObjectBase, Acquisition.Implicit):
     def addChild(self, name, type_name):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
-        raise NotImplementedError
+        return self._children.addChild(name, type_name)
 
     def removeChild(self, name):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
-        raise NotImplementedError
+        return self._children.removeChild(name)
 
     ##### Properties, see ObjectBase
 
@@ -384,14 +391,19 @@ class Property(Persistent):
 
     __name__ = None
     __parent__ = None
-    #_value = None # XXX
 
     def getName(self):
         return self.__name__
 
+    def getTypeName(self):
+        raise NotImplementedError
+
+    def _getPath(self, first=False):
+        return self.__parent__._getPath() + (self.__name__,)
+
     def __repr__(self):
-        return '<%s %r of %r>' % (
-            self.__class__.__name__, self.__name__, self.__parent__)
+        path = '/'.join(self._getPath(True))
+        return '<%s at %s>' % (self.__class__.__name__, path)
 
     def setPythonValue(self, value):
         raise NotImplementedError
@@ -441,6 +453,13 @@ class ListProperty(Property):
         self.__name__ = name
         self._setValueSchema(value_schema)
         self._values = list(values or ())
+
+    def _getPath(self, first=False):
+        ppath = self.__parent__._getPath()
+        if first:
+            return ppath + (self.__name__,)
+        else:
+            return ppath
 
     def _setValueSchema(self, schema):
         self._value_schema = schema

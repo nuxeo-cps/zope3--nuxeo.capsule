@@ -223,6 +223,8 @@ class IDocument(IObjectBase):
         """Get the parent document.
 
         Returns a IDocument, or None for the root.
+
+        XXX semantics for children of ListProperty?
         """
 
     ##### Properties: see IObjectBase
@@ -268,6 +270,7 @@ class IDocument(IObjectBase):
         """Add a new empty child to the document.
 
         Returns the newly created IDocument.
+        Raises KeyError if a child with the same name already exists.
         """
 
     def removeChild(name):
@@ -317,6 +320,10 @@ class IChildren(Interface):
     Children all have distinct names, and can be ordered or not.
     """
 
+    def getTypeName():
+        """Get the type of this intermediate object.
+        """
+
     def getChild(name, default=_MARKER):
         """Get a specific child.
 
@@ -354,9 +361,10 @@ class IChildren(Interface):
         Returns a boolean.
         """
 
-    def addChild(child):
+    def addChild(name, type_name):
         """Add a new child.
 
+        Returns the newly created IDocument.
         Raises KeyError if a child with the same name already exists.
         """
 
