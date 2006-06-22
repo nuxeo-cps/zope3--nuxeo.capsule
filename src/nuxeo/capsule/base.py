@@ -23,6 +23,7 @@ from cStringIO import StringIO
 import zope.interface
 from nuxeo.capsule.interfaces import IObjectBase
 from nuxeo.capsule.interfaces import IDocument
+from nuxeo.capsule.interfaces import IWorkspace
 from nuxeo.capsule.interfaces import IChildren
 from nuxeo.capsule.interfaces import IProperty
 from nuxeo.capsule.interfaces import IBinaryProperty
@@ -367,6 +368,12 @@ class Document(ObjectBase, Acquisition.Implicit):
                        (escape(str(name)), ev))
         res.append('</html>')
         return '\n'.join(res)
+
+
+class Workspace(Document):
+    """Root of a tree of documents.
+    """
+    zope.interface.implements(IWorkspace)
 
 
 class Property(Persistent):

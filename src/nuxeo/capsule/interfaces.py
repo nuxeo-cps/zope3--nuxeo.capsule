@@ -303,6 +303,11 @@ class IDocument(IObjectBase):
     # def getBaseVersion()
 
 
+class IWorkspace(IDocument):
+    """Capsule workspace, root of a tree of documents.
+    """
+
+
 ##################################################
 # Children (internal implementation detail of the Document class)
 
@@ -388,7 +393,7 @@ class ISchemaManager(Interface):
         Returns a class.
         """
 
-    def addSchema(schema):
+    def addSchema(name, schema):
         """Add a new schema.
         """
 

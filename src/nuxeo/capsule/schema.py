@@ -33,14 +33,16 @@ class SchemaManager(object):
         self._clear()
 
     def _clear(self):
-        self._schemas = {}
+        self._schemas = {} # all schemas including aliases
+        self._schemas_unaliased = set() # no aliases here
         self._classes = {}
         self._default_class = None
 
     def getSchemas(self):
         """See `nuxeo.capsule.interfaces.ISchemaManager`
         """
-        return self._schemas.copy()
+        return dict((name, self._schemas[name])
+                    for name in self._schemas_unaliased)
 
     def getSchema(self, name, default=_MARKER):
         """See `nuxeo.capsule.interfaces.ISchemaManager`
@@ -69,10 +71,7 @@ class SchemaManager(object):
 
     # Management
 
-    def addSchema(self, schema):
-        """See `nuxeo.capsule.interfaces.ISchemaManager`
-        """
-        name = schema.getName()
+    def _addSchema(self, name, schema):
         if name in self._schemas:
             raise ValueError("Schema %r already registered" % name)
         if not IInterface.providedBy(schema):
@@ -80,6 +79,14 @@ class SchemaManager(object):
         self._schemas[name] = schema
         if name not in self._classes:
             self._classes[name] = None
+
+    def addSchema(self, name, schema):
+        """See `nuxeo.capsule.interfaces.ISchemaManager`
+        """
+        self._addSchema(name, schema)
+        self._schemas_unaliased.add(name)
+        if name != schema.getName():
+            self._addSchema(schema.getName(), schema)
 
     def setClass(self, name, klass):
         """See `nuxeo.capsule.interfaces.ISchemaManager`
