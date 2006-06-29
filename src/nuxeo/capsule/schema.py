@@ -35,8 +35,8 @@ class SchemaManager(object):
     def _clear(self):
         self._schemas = {} # all schemas including aliases
         self._schemas_unaliased = set() # no aliases here
-        self._classes = {}
-        self._default_class = None
+        self._classes_spec = {} # spec of name -> class
+        self._classes = {} # resolved name -> class, None means KeyError
 
     def getSchemas(self):
         """See `nuxeo.capsule.interfaces.ISchemaManager`
@@ -56,13 +56,26 @@ class SchemaManager(object):
 
     def getClass(self, name, default=_MARKER):
         """See `nuxeo.capsule.interfaces.ISchemaManager`
+
+        Finds the most specific registered schema extending the
+        one passed, and returns the corresponding class.
         """
         try:
-            klass = self._classes[name]
+            if name in self._classes:
+                klass = self._classes[name]
+            else:
+                # Find most specific schema extending the one passed
+                schema = self._schemas[name]
+                klass = None
+                for n, k in self._classes_spec.iteritems():
+                    s = self._schemas[n]
+                    if schema.isOrExtends(s):
+                        if klass is None or s.extends(best):
+                            klass = k
+                            best = s
+                self._classes[name] = klass
             if klass is None:
-                klass = self._default_class
-                if klass is None:
-                    raise KeyError(name)
+                raise KeyError(name)
         except KeyError:
             if default is not _MARKER:
                 return default
@@ -77,8 +90,6 @@ class SchemaManager(object):
         if not IInterface.providedBy(schema):
             raise ValueError("Schema %r is not an Interface" % name)
         self._schemas[name] = schema
-        if name not in self._classes:
-            self._classes[name] = None
 
     def addSchema(self, name, schema):
         """See `nuxeo.capsule.interfaces.ISchemaManager`
@@ -87,19 +98,12 @@ class SchemaManager(object):
         self._schemas_unaliased.add(name)
         if name != schema.getName():
             self._addSchema(schema.getName(), schema)
+        self._classes = {}
 
     def setClass(self, name, klass):
         """See `nuxeo.capsule.interfaces.ISchemaManager`
         """
-        if self._classes.get(name) is not None:
+        if name in self._classes_spec:
             raise ValueError("Class %r already registered" % name)
-        self._classes[name] = klass
-
-    def setDefaultClass(self, klass):
-        """See `nuxeo.capsule.interfaces.ISchemaManager`
-        """
-        if self._default_class is not None:
-            for name, k in self._classes.iteritems():
-                if k is None:
-                    self._classes[name] = self._default_class
-        self._default_class = klass
+        self._classes_spec[name] = klass
+        self._classes = {}

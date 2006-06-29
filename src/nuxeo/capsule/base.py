@@ -22,6 +22,7 @@ from cStringIO import StringIO
 
 import zope.interface
 from nuxeo.capsule.interfaces import IObjectBase
+from nuxeo.capsule.interfaces import IContainerBase
 from nuxeo.capsule.interfaces import IDocument
 from nuxeo.capsule.interfaces import IWorkspace
 from nuxeo.capsule.interfaces import IChildren
@@ -93,28 +94,20 @@ class ObjectBase(Persistent):
             self._p_changed = True
             self._props[name] = value
 
-    def XXX__getattr__(self, name):
-        """See `nuxeo.capsule.interfaces.IObjectBase`
-        """
-        try:
-            return self._props[name]
-        except KeyError:
-            raise AttributeError(name)
 
-
-class Children(Persistent):
-    """Holder of children nodes.
+class ContainerBase(Persistent):
+    """A holder of children nodes.
 
     Children all have distinct names, and can be ordered or not.
 
     Children are stored inside the _children attribute, which maps a
-    unicode name to a IDocument
+    unicode name to a IObjectBase.
 
-    For ordered folders, the _order list contains the ordered list of
-    keys. For unordered folders, _order is None.
+    For ordered containers, the _order list contains the ordered list of
+    keys. For unordered containers, _order is None.
 
-    For unordered folders, the children may be loaded lazily from the
-    storage (because these folders can be big). In this case:
+    For unordered containers, the children may be loaded lazily from the
+    storage (because these containers can be big). In this case:
 
     - _lazy is a set storing the names of already loaded children,
 
@@ -122,20 +115,116 @@ class Children(Persistent):
 
     If child loading is not lazy, _lazy and _missing are None.
     """
-    zope.interface.implements(IChildren)
+    zope.interface.implements(IContainerBase)
 
-    __name__ = 'cps:children'
+    __parent__ = None
     _lazy = None
     _missing = None
 
-    def __init__(self, parent):
-        self.__parent__ = parent
+    def __init__(self, name):
+        self.__name__ = name
         self._children = {}
         self._order = [] # ordered XXX
 
+    def _getPath(self, first=False):
+        ppath = self.__parent__._getPath()
+        return ppath + (self.__name__,)
+
+    def __repr__(self):
+        path = '/'.join(self._getPath(True))
+        return '<%s at %s>' % (self.__class__.__name__, path)
+
+    def getChild(self, name, default=_MARKER):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        try:
+            return self._children[name]
+        except KeyError:
+            if default is not _MARKER:
+                return default
+            raise
+
+    def __getitem__(self, name):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        return self._children[name]
+
+    def getChildren(self):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        return iter(self)
+
+    def __iter__(self):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        if self._order is None:
+            return self._children.itervalues()
+        else:
+            return (self._children[k] for k in self._order)
+
+    def hasChild(self, name):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        return name in self._children
+
+    def __contains__(self, name):
+        return name in self._children
+
+    def __len__(self):
+        return len(self._children)
+
+    def hasChildren(self):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        return bool(self._children)
+
+    def addChild(self, name, type_name):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        raise NotImplementedError
+
+    def removeChild(self, name):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        child = self._children[name]
+        del self._children[name]
+        if self._order is not None:
+            self._order.remove(name)
+        return child
+
+    def __delitem__(self, name):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        self.removeChild(name)
+
+    def clear(self):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        self._children = {}
+        if self._order is not None:
+            self._order = []
+
+    def reorder(self, names):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        if self._order is None:
+            raise TypeError("Unordered container")
+        if set(names) != set(self._order):
+            raise ValueError("Names mismatch")
+        self._order = list(names)
+
+
+class Children(ContainerBase):
+    """Holder of children nodes.
+    """
+    zope.interface.implements(IChildren)
+
+    def __init__(self, parent):
+        ContainerBase.__init__(self, 'ecm:children')
+        self.__parent__ = parent
+
     def getName(self):
         return self.__name__
-
 
     def getTypeName(self):
         """See `nuxeo.capsule.interfaces.IChildren`
@@ -148,58 +237,6 @@ class Children(Persistent):
             return ppath + (self.__name__,)
         else:
             return ppath
-
-    def __repr__(self):
-        path = '/'.join(self._getPath(True))
-        return '<%s at %s>' % (self.__class__.__name__, path)
-
-    def getChild(self, name, default=_MARKER):
-        """See `nuxeo.capsule.interfaces.IChildren`
-        """
-        try:
-            return self._children[name]
-        except KeyError:
-            if default is not _MARKER:
-                return default
-            raise
-
-    def __getitem__(self, name):
-        """See `nuxeo.capsule.interfaces.IChildren`
-        """
-        return self._children[name]
-
-    def getChildren(self):
-        """See `nuxeo.capsule.interfaces.IChildren`
-        """
-        if self._order is None:
-            return self._children.itervalues()
-        else:
-            return [self._children[k] for k in self._order]
-
-    def __contains__(self, name):
-        return name in self._children
-
-    def __len__(self):
-        return len(self._children)
-
-    def hasChildren(self):
-        """See `nuxeo.capsule.interfaces.IChildren`
-        """
-        return bool(self._children)
-
-    def addChild(self, name, type_name):
-        """See `nuxeo.capsule.interfaces.IChildren`
-        """
-        raise NotImplementedError
-
-    def removeChild(self, name):
-        """See `nuxeo.capsule.interfaces.IChildren`
-        """
-        child = self._children[name]
-        del self._children[name]
-        if self._order is not None:
-            self._order.remove(name)
-        return child
 
 
 class Document(ObjectBase, Acquisition.Implicit):
@@ -221,6 +258,7 @@ class Document(ObjectBase, Acquisition.Implicit):
     """
     zope.interface.implements(IDocument)
 
+    # Derived __init__ must initialize _children
     _children = None
 
     def __init__(self, name, schema):
@@ -264,25 +302,28 @@ class Document(ObjectBase, Acquisition.Implicit):
             print 'XXX doc parent is not IChildren but %r' % parent
         return parent
 
-    ##### Children
+    ##### Children, delegating to _children
 
     def getChild(self, name, default=_MARKER):
-        """See `nuxeo.capsule.interfaces.IDocument`
+        """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         return self._children.getChild(name, default)
 
     def __getitem__(self, name):
-        """See `nuxeo.capsule.interfaces.IDocument`
+        """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         return self._children[name]
 
     def getChildren(self):
-        """See `nuxeo.capsule.interfaces.IDocument`
+        """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         return self._children.getChildren()
 
+    def __iter__(self):
+        return iter(self._children)
+
     def hasChild(self, name):
-        """See `nuxeo.capsule.interfaces.IDocument`
+        """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         return name in self._children
 
@@ -293,19 +334,34 @@ class Document(ObjectBase, Acquisition.Implicit):
         return len(self._children)
 
     def hasChildren(self):
-        """See `nuxeo.capsule.interfaces.IDocument`
+        """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         return self._children.hasChildren()
 
     def addChild(self, name, type_name):
-        """See `nuxeo.capsule.interfaces.IDocument`
+        """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         return self._children.addChild(name, type_name)
 
     def removeChild(self, name):
-        """See `nuxeo.capsule.interfaces.IDocument`
+        """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         return self._children.removeChild(name)
+
+    def __delitem__(self, name):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        del self._children[name]
+
+    def clear(self):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        self._children.clear()
+
+    def reorder(self, names):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        self._children.reorder(names)
 
     ##### Properties, see ObjectBase
 
@@ -444,22 +500,18 @@ class BinaryProperty(Property):
         return self._value
 
 
-class ListProperty(Property):
-    """A list of properties.
+class ListProperty(ContainerBase, Property):
+    """A list of complex properties.
+
+    Properties are stored as ordered subobjects.
     """
     zope.interface.implements(IListProperty)
 
     def __init__(self, name, value_schema, values=None):
-        self.__name__ = name
+        ContainerBase.__init__(self, name) # with ordering
         self._setValueSchema(value_schema)
-        self._values = list(values or ())
-
-    def _getPath(self, first=False):
-        ppath = self.__parent__._getPath()
-        if first:
-            return ppath + (self.__name__,)
-        else:
-            return ppath
+        if values is not None:
+            self.setPythonValue(values)
 
     def _setValueSchema(self, schema):
         self._value_schema = schema
@@ -469,8 +521,8 @@ class ListProperty(Property):
         """
         return self._value_schema
 
-    def _createItem(self):
-        """Create one item for the list.
+    def addValue(self):
+        """See `nuxeo.capsule.interfaces.IListProperty`
         """
         raise NotImplementedError("Must be subclassed")
 
@@ -479,54 +531,49 @@ class ListProperty(Property):
 
         Returns a list of python simple types.
         """
-        value = []
-        for v in self._values:
-            if IProperty.providedBy(v):
-                v = v.getPythonValue()
-            value.append(v)
-        return value
+        l = []
+        for value in self:
+            if IProperty.providedBy(value):
+                value = value.getPythonValue()
+            l.append(value)
+        return l
 
-    def setPythonValue(self, value):
+    def setPythonValue(self, values):
         """See `nuxeo.capsule.interfaces.IProperty`
 
         `value` is a list of python simple types.
         """
-        l = []
-        for v in value:
-            if isinstance(v, dict):
-                item = self._createItem()
-                item.setPythonValue(v)
-                v = item
-            l.append(v)
-        self._values = l
-
-    def addValue(self):
-        """See `nuxeo.capsule.interfaces.IListProperty`
-        """
-        ob = self._createItem()
-        self._p_changed = True
-        self._values.append(ob)
-        return ob
+        # Find which items to keep
+        kept = []
+        for v in values:
+            if not isinstance(v, dict):
+                raise ValueError("Not a dict value: %r" % (v,))
+            name = v.get('__name__')
+            if name is not None:
+                kept.append(name)
+        # Remove items not kept
+        for name in list(set(self._order) - set(kept)):
+            del self[name]
+        # Modify kept objects, or add new ones
+        names = []
+        for v in values:
+            name = v.get('__name__')
+            if name is not None:
+                ob = self[name]
+            else:
+                ob = self.addValue()
+                name = ob.getName()
+                v['__name__'] = name
+            names.append(name)
+            ob.setPythonValue(v)
+        # Set final order
+        self.reorder(names)
 
     def __getitem__(self, index):
         """See `nuxeo.capsule.interfaces.IListProperty`
         """
-        return self._values[index]
-
-    def __len__(self):
-        """See `nuxeo.capsule.interfaces.IListProperty`
-        """
-        return len(self._values)
-
-    def __contains__(self, val):
-        """See `nuxeo.capsule.interfaces.IListProperty`
-        """
-        return val in self._values
-
-    def __iter__(self):
-        """See `nuxeo.capsule.interfaces.IListProperty`
-        """
-        return iter(self._values)
+        k = self._order[index]
+        return self._children[k]
 
 
 class ObjectProperty(ObjectBase, Property):
@@ -541,7 +588,8 @@ class ObjectProperty(ObjectBase, Property):
         """
         # XXX clear other props before?
         for k, v in value.iteritems():
-            self.setProperty(k, v)
+            if k != '__name__':
+                self.setProperty(k, v)
 
     def getPythonValue(self):
         """See `nuxeo.capsule.interfaces.IProperty`

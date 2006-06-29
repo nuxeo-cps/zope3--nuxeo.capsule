@@ -87,6 +87,85 @@ class IObjectBase(Interface):
 ##         Returns a IProperty or a basic python type.
 ##         """
 
+class IContainerBase(Interface):
+    """An object containing children.
+    """
+
+    def getChild(name, default=_MARKER):
+        """Get a specific child.
+
+        Returns a IObjectBase.
+
+        If the child doesn't exist, returns the default or raises
+        KeyError if there is no default.
+        """
+
+    def __getitem__(name):
+        """Get a specific child.
+
+        Returns a IObjectBase.
+
+        Raises KeyError if the child doesn't exist.
+        """
+
+    def getChildren():
+        """Get the children.
+
+        Returns an iterable of children implementing IObjectBase.
+        """
+
+    def __iter__():
+        """Get an iterable of children.
+        """
+
+    def hasChild(name):
+        """Test if the document has a given child.
+
+        Returns a boolean.
+        """
+
+    def __contains__(name):
+        """Test containment by name.
+        """
+
+    def __len__():
+        """Get the number of children.
+        """
+
+    def hasChildren():
+        """Test if the document has any children.
+
+        Returns a boolean.
+        """
+
+    def addChild(name, type_name):
+        """Add a new empty child to the document.
+
+        `type_name` may be a schema itself instead of a string.
+
+        Returns the newly created IObjectBase.
+
+        Raises KeyError if a child with the same name already exists.
+        """
+
+    def removeChild(name):
+        """Remove a child.
+        """
+
+    def __delitem__(name):
+        """Remove a child.
+        """
+
+    def clear():
+        """Remove all children.
+        """
+
+    def reorder(names):
+        """Reorder the children.
+
+        `names` must be a permutation of the current names.
+        """
+
 
 ##################################################
 # Properties
@@ -200,7 +279,7 @@ class IReference(Interface):
 ##################################################
 # Documents
 
-class IDocument(IObjectBase):
+class IDocument(IObjectBase, IContainerBase):
     """Capsule document.
     """
 
@@ -229,53 +308,7 @@ class IDocument(IObjectBase):
 
     ##### Properties: see IObjectBase
 
-    ##### Children
-
-    def getChild(name, default=_MARKER):
-        """Get a specific child.
-
-        Returns a IDocument.
-
-        If the child doesn't exist, returns the default or raises
-        KeyError if there is no default.
-        """
-
-    def __getitem__(name):
-        """Get a specific child.
-
-        Returns a IDocument.
-
-        Raises KeyError if the child doesn't exist.
-        """
-
-    def getChildren():
-        """Get the children.
-
-        Returns an iterable of children implementing IDocument.
-        """
-
-    def hasChild(name):
-        """Test if the document has a given child.
-
-        Returns a boolean.
-        """
-
-    def hasChildren():
-        """Test if the document has any children.
-
-        Returns a boolean.
-        """
-
-    def addChild(name, type_name):
-        """Add a new empty child to the document.
-
-        Returns the newly created IDocument.
-        Raises KeyError if a child with the same name already exists.
-        """
-
-    def removeChild(name):
-        """Remove a child from the document.
-        """
+    ##### Children: see IContainerBase
 
     ##### Misc
 
@@ -314,7 +347,7 @@ class IWorkspace(IDocument):
 ##################################################
 # Children (internal implementation detail of the Document class)
 
-class IChildren(Interface):
+class IChildren(IContainerBase):
     """Holder of children nodes.
 
     Children all have distinct names, and can be ordered or not.
@@ -322,56 +355,6 @@ class IChildren(Interface):
 
     def getTypeName():
         """Get the type of this intermediate object.
-        """
-
-    def getChild(name, default=_MARKER):
-        """Get a specific child.
-
-        Returns a IDocument.
-
-        If the child doesn't exist, returns the default or raises
-        KeyError if there is no default.
-        """
-
-    def __getitem__(name):
-        """Get a specific child.
-
-        Returns a IDocument.
-
-        Raises KeyError if the child doesn't exist.
-        """
-
-    def getChildren():
-        """Get the children.
-
-        Returns an iterable of children implementing IDocument.
-        """
-
-    def __contains__(name):
-        """Test containment by name.
-        """
-
-    def __len__():
-        """Get the number of children.
-        """
-
-    def hasChildren():
-        """Test if the document has any children.
-
-        Returns a boolean.
-        """
-
-    def addChild(name, type_name):
-        """Add a new child.
-
-        Returns the newly created IDocument.
-        Raises KeyError if a child with the same name already exists.
-        """
-
-    def removeChild(name):
-        """Remove a child.
-
-        Returns the child removed, or raises KeyError if it doesn't exist.
         """
 
 ##################################################
@@ -398,6 +381,9 @@ class ISchemaManager(Interface):
     def getClass(name, default=_MARKER):
         """Get a class corresponding to a type name.
 
+        The class returned will be the class set by `setClass` for the
+        most specific base schema for that name.
+
         Returns a class.
         """
 
@@ -406,15 +392,9 @@ class ISchemaManager(Interface):
         """
 
     def setClass(name, klass):
-        """Set the class for an already defined schema.
+        """Set the class for a schema and its derived ones.
         """
 
-    def setDefaultClass(klass):
-        """Set the default class.
-
-        All schema currently using the default class will be fixed to
-        any preexisting default.
-        """
 
 ##################################################
 # Schemas Fields
@@ -428,12 +408,13 @@ class IBinaryField(IMinMaxLen, ICapsuleField):
     """
 
 class IListPropertyField(IList, ICapsuleField):
-    """Schema field containing a persistent list of objects.
+    """Schema field for a persistent list of objects.
     """
 
 class IObjectPropertyField(IObject, ICapsuleField):
-    """Schema field containing a schema-based object.
+    """Schema field for a schema-based object.
     """
+
 
 class IReferenceField(Interface):
     """Schema field containing a capsule reference.
