@@ -201,6 +201,46 @@ class IProperty(Interface):
         """
 
 
+class IObjectProperty(IObjectBase, IProperty):
+    """A complex type with fields based on a schema.
+    """
+
+
+class IContainerProperty(IObjectProperty, IContainerBase):
+    """A complex type holding subobjects.
+    """
+
+
+class IListProperty(IContainerProperty):
+    """A complex type that is a list of values.
+
+    The schema of the values is constrained.
+    """
+
+    def __getitem__(index):
+        """Get the value at a given index.
+        """
+
+    def __len__():
+        """Get the length of the list.
+        """
+
+    def __contains__(value):
+        """Test containment.
+
+        Compares by object identity.
+        """
+
+    def getValueSchema():
+        """Get the schema for the values of this list.
+        """
+
+    def addValue():
+        """Add a new empty value to the list.
+
+        Returns an IProperty
+        """
+
 class IBinaryProperty(IProperty):
     """A binary object (blob).
 
@@ -222,48 +262,6 @@ class IBinaryProperty(IProperty):
     def __str__():
         """Get a string containing the binary.
         """
-
-class IListProperty(IProperty):
-    """A complex type that is a list of values.
-
-    Each value is a IObjectProperty.
-
-    This is specified in a schema using a IListPropertyField.
-    """
-
-    def __getitem__(index):
-        """Get the value at a given index.
-        """
-
-    def __len__():
-        """Get the length of the list.
-        """
-
-    def __contains__(value):
-        """Test containment.
-
-        Compares by object identity.
-        """
-
-    def __iter__():
-        """Get an iterator for the list.
-        """
-
-    def getValueSchema():
-        """Get the schema for the values of this list.
-        """
-
-    def addValue():
-        """Add a new empty value to the list.
-
-        Returns an IProperty
-        """
-
-class IObjectProperty(IObjectBase, IProperty):
-    """A complex type with fields based on a schema.
-
-    This is specified in a schema using a IObjectPropertyField.
-    """
 
 
 class IReference(Interface):
@@ -403,18 +401,23 @@ class ICapsuleField(Interface):
     """Marker interface for complex Capsule fields.
     """
 
-class IBinaryField(IMinMaxLen, ICapsuleField):
-    """Schema field containing a seekable file-like object.
+
+class IObjectPropertyField(IObject, ICapsuleField):
+    """Schema field for a capsule object.
     """
 
-class IListPropertyField(IList, ICapsuleField):
+class IContainerPropertyField(IObjectPropertyField):
+    """Schema field for a capsule container.
+    """
+
+class IListPropertyField(IContainerPropertyField, IList):
     """Schema field for a persistent list of objects.
     """
 
-class IObjectPropertyField(IObject, ICapsuleField):
-    """Schema field for a schema-based object.
-    """
 
+class IBinaryField(IMinMaxLen, ICapsuleField):
+    """Schema field containing a seekable file-like object.
+    """
 
 class IReferenceField(Interface):
     """Schema field containing a capsule reference.

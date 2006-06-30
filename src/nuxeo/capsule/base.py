@@ -27,9 +27,10 @@ from nuxeo.capsule.interfaces import IDocument
 from nuxeo.capsule.interfaces import IWorkspace
 from nuxeo.capsule.interfaces import IChildren
 from nuxeo.capsule.interfaces import IProperty
-from nuxeo.capsule.interfaces import IBinaryProperty
-from nuxeo.capsule.interfaces import IListProperty
 from nuxeo.capsule.interfaces import IObjectProperty
+from nuxeo.capsule.interfaces import IContainerProperty
+from nuxeo.capsule.interfaces import IListProperty
+from nuxeo.capsule.interfaces import IBinaryProperty
 from nuxeo.capsule.interfaces import IReference
 
 _MARKER = object()
@@ -181,7 +182,7 @@ class ContainerBase(Persistent):
     def addChild(self, name, type_name):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
-        raise NotImplementedError
+        raise NotImplementedError("Must be subclassed")
 
     def removeChild(self, name):
         """See `nuxeo.capsule.interfaces.IContainerBase`
@@ -210,7 +211,8 @@ class ContainerBase(Persistent):
         if self._order is None:
             raise TypeError("Unordered container")
         if set(names) != set(self._order):
-            raise ValueError("Names mismatch")
+            raise ValueError("Names mismatch (%s to %s)" %
+                             (self, names._order))
         self._order = list(names)
 
 
@@ -219,9 +221,9 @@ class Children(ContainerBase):
     """
     zope.interface.implements(IChildren)
 
-    def __init__(self, parent):
+    def __init__(self, name, schema=None):
+        assert name == 'ecm:children', name
         ContainerBase.__init__(self, 'ecm:children')
-        self.__parent__ = parent
 
     def getName(self):
         return self.__name__
@@ -260,9 +262,6 @@ class Document(ObjectBase, Acquisition.Implicit):
 
     # Derived __init__ must initialize _children
     _children = None
-
-    def __init__(self, name, schema):
-        ObjectBase.__init__(self, name, schema)
 
     def _getPath(self, first=False):
         if self.__parent__ is None:
@@ -468,50 +467,63 @@ class Property(Persistent):
         raise NotImplementedError
 
 
-class BinaryProperty(Property):
-    """A binary object (blob).
+class ObjectProperty(ObjectBase, Property):
+    """A complex type with fields based on a schema.
     """
-    zope.interface.implements(IBinaryProperty)
+    zope.interface.implements(IObjectProperty)
 
-    mime_type = None
-    encoding = None
+    def setPythonValue(self, value):
+        """See `nuxeo.capsule.interfaces.IProperty`
 
-    def __init__(self, data, mime_type=None, encoding=None):
-        if isinstance(data, unicode):
-            raise ValueError('unicode data')
-        self._value = data
-        self._len = len(data)
-        self.mime_type = mime_type
-        self.encoding = encoding
-
-    def open(self):
-        """See `nuxeo.capsule.interfaces.IBinaryProperty`
+        `value` is a mapping.
         """
-        return StringIO(self._value)
+        # XXX clear other props before?
+        for k, v in value.iteritems():
+            if k != '__name__':
+                self.setProperty(k, v)
 
-    def __len__(self):
-        """See `nuxeo.capsule.interfaces.IBinaryProperty`
+    def getPythonValue(self):
+        """See `nuxeo.capsule.interfaces.IProperty`
+
+        Returns a mapping.
         """
-        return self._len
+        value = {}
+        for k, v in self._props.iteritems():
+            if IProperty.providedBy(v):
+                v = v.getPythonValue()
+            value[k] = v
+        return value
 
-    def __str__(self):
-        """See `nuxeo.capsule.interfaces.IBinaryProperty`
-        """
-        return self._value
+
+class ContainerProperty(ContainerBase, ObjectProperty):
+    """A complex type holding subobjects.
+    """
+    zope.interface.implements(IContainerProperty)
+
+    def __init__(self, name, schema):
+        ObjectProperty.__init__(self, name, schema)
+        ContainerBase.__init__(self, name) # with ordering
+
+    def setPythonValue(self, value):
+        raise NotImplementedError
+
+    def getPythonValue(self):
+        raise NotImplementedError
 
 
-class ListProperty(ContainerBase, Property):
+class ListProperty(ContainerProperty):
     """A list of complex properties.
 
     Properties are stored as ordered subobjects.
     """
     zope.interface.implements(IListProperty)
 
-    def __init__(self, name, value_schema, values=None):
-        ContainerBase.__init__(self, name) # with ordering
+    def __init__(self, name, schema):
+        ContainerProperty.__init__(self, name, schema)
+        types = schema['__setitem__'].getTaggedValue('precondition').types
+        assert len(types) == 1, types
+        value_schema = types[0]
         self._setValueSchema(value_schema)
-        if values is not None:
-            self.setPythonValue(values)
 
     def _setValueSchema(self, schema):
         self._value_schema = schema
@@ -575,33 +587,42 @@ class ListProperty(ContainerBase, Property):
         k = self._order[index]
         return self._children[k]
 
+    def __contains__(self, value):
+        """See `nuxeo.capsule.interfaces.IListProperty`
+        """
+        return value in self._children
 
-class ObjectProperty(ObjectBase, Property):
-    """A complex type with fields based on a schema.
+
+class BinaryProperty(Property):
+    """A binary object (blob).
     """
-    zope.interface.implements(IObjectProperty)
+    zope.interface.implements(IBinaryProperty)
 
-    def setPythonValue(self, value):
-        """See `nuxeo.capsule.interfaces.IProperty`
+    mime_type = None
+    encoding = None
 
-        `value` is a mapping.
+    def __init__(self, data, mime_type=None, encoding=None):
+        if isinstance(data, unicode):
+            raise ValueError('unicode data')
+        self._value = data
+        self._len = len(data)
+        self.mime_type = mime_type
+        self.encoding = encoding
+
+    def open(self):
+        """See `nuxeo.capsule.interfaces.IBinaryProperty`
         """
-        # XXX clear other props before?
-        for k, v in value.iteritems():
-            if k != '__name__':
-                self.setProperty(k, v)
+        return StringIO(self._value)
 
-    def getPythonValue(self):
-        """See `nuxeo.capsule.interfaces.IProperty`
-
-        Returns a mapping.
+    def __len__(self):
+        """See `nuxeo.capsule.interfaces.IBinaryProperty`
         """
-        value = {}
-        for k, v in self._props.iteritems():
-            if IProperty.providedBy(v):
-                v = v.getPythonValue()
-            value[k] = v
-        return value
+        return self._len
+
+    def __str__(self):
+        """See `nuxeo.capsule.interfaces.IBinaryProperty`
+        """
+        return self._value
 
 
 class Reference(object):

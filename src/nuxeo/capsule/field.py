@@ -22,15 +22,52 @@ from zope.schema import MinMaxLen
 from zope.schema import List
 from zope.schema import Object
 
-from nuxeo.capsule.interfaces import IBinaryField
-from nuxeo.capsule.interfaces import IListPropertyField
 from nuxeo.capsule.interfaces import IObjectPropertyField
+from nuxeo.capsule.interfaces import IContainerPropertyField
+from nuxeo.capsule.interfaces import IListPropertyField
+from nuxeo.capsule.interfaces import IBinaryField
 from nuxeo.capsule.interfaces import IReferenceField
 
-from nuxeo.capsule.base import BinaryProperty
-from nuxeo.capsule.base import ListProperty
 from nuxeo.capsule.base import ObjectProperty
+from nuxeo.capsule.base import ContainerProperty
+from nuxeo.capsule.base import ListProperty
+from nuxeo.capsule.base import BinaryProperty
 from nuxeo.capsule.base import Reference
+
+
+class ObjectPropertyField(Object):
+    """A field representing a capsule object.
+
+    A capsule object has a schema and can hold properties.
+    This field holds a `schema` attribute.
+    """
+    zope.interface.implements(IObjectPropertyField)
+    _type = ObjectProperty
+
+
+class ContainerPropertyField(ObjectPropertyField, List):
+    """A field representing a container.
+
+    This field holds a `schema` attribute.
+    """
+    zope.interface.implements(IContainerPropertyField)
+    _type = ContainerProperty
+
+
+class ListPropertyField(ContainerPropertyField):
+    """A field representing a persistent List of properties.
+
+    This field holds a `schema` attribute and a `value_type` attribute.
+    """
+    zope.interface.implements(IListPropertyField)
+    _type = ListProperty
+    def __init__(self, schema, **kw):
+        ContainerPropertyField.__init__(self, schema, **kw)
+        types = schema['__setitem__'].getTaggedValue('precondition').types
+        assert len(types) == 1, types
+        value_schema = types[0]
+        subfield = ObjectPropertyField(value_schema, __name__='')
+        List.__init__(self, value_type=subfield, **kw)
 
 
 class BinaryField(MinMaxLen, Field):
@@ -38,19 +75,6 @@ class BinaryField(MinMaxLen, Field):
     """
     zope.interface.implements(IBinaryField)
     _type = BinaryProperty
-
-
-class ListPropertyField(List):
-    """A field representing a persistent List of properties.
-    """
-    zope.interface.implements(IListPropertyField)
-    _type = ListProperty
-
-class ObjectPropertyField(Object):
-    """A field representing a persistent object.
-    """
-    zope.interface.implements(IObjectPropertyField)
-    _type = ObjectProperty
 
 
 class ReferenceField(Field):

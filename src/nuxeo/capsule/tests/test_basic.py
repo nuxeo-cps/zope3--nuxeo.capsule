@@ -23,20 +23,25 @@ from zope.interface.verify import verifyClass
 
 class InterfaceTests(unittest.TestCase):
 
-    def test_BinaryProperty(self):
-        from nuxeo.capsule.interfaces import IBinaryProperty
-        from nuxeo.capsule.base import BinaryProperty
-        verifyClass(IBinaryProperty, BinaryProperty)
+    def test_ObjectProperty(self):
+        from nuxeo.capsule.interfaces import IObjectProperty
+        from nuxeo.capsule.base import ObjectProperty
+        verifyClass(IObjectProperty, ObjectProperty)
+
+    def test_ContainerProperty(self):
+        from nuxeo.capsule.interfaces import IContainerProperty
+        from nuxeo.capsule.base import ContainerProperty
+        verifyClass(IContainerProperty, ContainerProperty)
 
     def test_ListProperty(self):
         from nuxeo.capsule.interfaces import IListProperty
         from nuxeo.capsule.base import ListProperty
         verifyClass(IListProperty, ListProperty)
 
-    def test_ObjectProperty(self):
-        from nuxeo.capsule.interfaces import IObjectProperty
-        from nuxeo.capsule.base import ObjectProperty
-        verifyClass(IObjectProperty, ObjectProperty)
+    def test_BinaryProperty(self):
+        from nuxeo.capsule.interfaces import IBinaryProperty
+        from nuxeo.capsule.base import BinaryProperty
+        verifyClass(IBinaryProperty, BinaryProperty)
 
     def test_Document(self):
         from nuxeo.capsule.interfaces import IDocument
