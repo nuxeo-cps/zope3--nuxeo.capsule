@@ -281,7 +281,20 @@ class IReference(Interface):
 ##################################################
 # Documents
 
-class IDocument(IObjectBase, IContainerBase):
+class IWorkflowSupport(Interface):
+    """Interface for workflow support
+    """
+
+    def getStatus(workflow_id):
+        """Return the object status for given workflow id
+        """
+
+    def setStatus(workflow_id, status):
+        """Set status for given workflow id
+        """
+
+
+class IDocument(IObjectBase, IContainerBase, IWorkflowSupport):
     """Capsule document.
     """
 

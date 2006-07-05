@@ -388,6 +388,19 @@ class Document(ObjectBase, Acquisition.Implicit):
         """
         return True # XXX
 
+
+    ##### Workflow status
+
+    def getStatus(self, workflow_id):
+        """See `nuxeo.capsule.interfaces.IWorkflowSupport`
+        """
+        raise NotImplementedError
+
+    def setStatus(self, workflow_id, status):
+        """See `nuxeo.capsule.interfaces.IWorkflowSupport`
+        """
+        raise NotImplementedError
+
     #
     # ZMI # XXX here for now, later in a Zope2-specific subclass
     #
