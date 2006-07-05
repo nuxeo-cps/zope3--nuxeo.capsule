@@ -221,6 +221,10 @@ class IListProperty(IContainerProperty):
         """Get the value at a given index.
         """
 
+    def __delitem__(index):
+        """Remove the value at a given index.
+        """
+
     def __len__():
         """Get the length of the list.
         """

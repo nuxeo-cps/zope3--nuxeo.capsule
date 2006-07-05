@@ -585,7 +585,13 @@ class ListProperty(ContainerProperty):
         """See `nuxeo.capsule.interfaces.IListProperty`
         """
         k = self._order[index]
-        return self._children[k]
+        return ContainerProperty.__getitem__(self, k)
+
+    def __delitem__(self, index):
+        """See `nuxeo.capsule.interfaces.IListProperty`
+        """
+        k = self._order[index]
+        self.removeChild(k)
 
     def __contains__(self, value):
         """See `nuxeo.capsule.interfaces.IListProperty`
