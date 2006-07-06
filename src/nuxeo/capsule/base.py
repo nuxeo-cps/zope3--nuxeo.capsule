@@ -479,7 +479,10 @@ class ObjectProperty(ObjectBase, Property):
         """
         # XXX clear other props before?
         for k, v in value.iteritems():
-            if k != '__name__':
+            if k == '__name__':
+                if v != self.getName():
+                    raise ValueError("Mismatched names")
+            else:
                 self.setProperty(k, v)
 
     def getPythonValue(self):
@@ -492,6 +495,8 @@ class ObjectProperty(ObjectBase, Property):
             if IProperty.providedBy(v):
                 v = v.getPythonValue()
             value[k] = v
+        # Name is stored so that setPythonValue can recognize list items
+        value['__name__'] = self.getName()
         return value
 
 
@@ -547,8 +552,6 @@ class ListProperty(ContainerProperty):
         for ob in self:
             assert IProperty.providedBy(ob)
             v = ob.getPythonValue()
-            # Name is stored so that setPythonValue can recognize items
-            v['__name__'] = ob.getName()
             l.append(v)
         return l
 
@@ -577,7 +580,6 @@ class ListProperty(ContainerProperty):
             else:
                 ob = self.addValue()
                 name = ob.getName()
-                v['__name__'] = name
             names.append(name)
             ob.setPythonValue(v)
         # Set final order
