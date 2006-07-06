@@ -212,7 +212,7 @@ class ContainerBase(Persistent):
             raise TypeError("Unordered container")
         if set(names) != set(self._order):
             raise ValueError("Names mismatch (%s to %s)" %
-                             (self, names._order))
+                             (self._order, names))
         self._order = list(names)
 
 
