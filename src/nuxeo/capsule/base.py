@@ -544,10 +544,12 @@ class ListProperty(ContainerProperty):
         Returns a list of python simple types.
         """
         l = []
-        for value in self:
-            if IProperty.providedBy(value):
-                value = value.getPythonValue()
-            l.append(value)
+        for ob in self:
+            assert IProperty.providedBy(ob)
+            v = ob.getPythonValue()
+            # Name is stored so that setPythonValue can recognize items
+            v['__name__'] = ob.getName()
+            l.append(v)
         return l
 
     def setPythonValue(self, values):
@@ -571,7 +573,7 @@ class ListProperty(ContainerProperty):
         for v in values:
             name = v.get('__name__')
             if name is not None:
-                ob = self[name]
+                ob = self.getChild(name)
             else:
                 ob = self.addValue()
                 name = ob.getName()
