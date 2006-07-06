@@ -570,7 +570,7 @@ class ListProperty(ContainerProperty):
                 kept.append(name)
         # Remove items not kept
         for name in list(set(self._order) - set(kept)):
-            del self[name]
+            self.removeChild(name)
         # Modify kept objects, or add new ones
         names = []
         for v in values:
