@@ -396,6 +396,16 @@ class Document(ObjectBase, Acquisition.Implicit):
         """Get the id of the object."""
         return self.getName()
 
+    def objectIds(self):
+        """Get children ids
+        """
+        return self._children.keys()
+
+    def objectValues(self):
+        """Get children
+        """
+        return self.getChildren()
+
     manage_main__roles__ = None # Public
     def manage_main(self, REQUEST=None, RESPONSE=None):
         """View object. XXX"""
