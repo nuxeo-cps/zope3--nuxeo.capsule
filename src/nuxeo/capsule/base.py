@@ -128,8 +128,10 @@ class ContainerBase(Persistent):
         self._order = [] # ordered XXX
 
     def _getPath(self, first=False):
-        ppath = self.__parent__._getPath()
-        return ppath + (self.__name__,)
+        if self.__parent__ is None:
+            return (self.__name__,)
+        else:
+            return self.__parent__._getPath() + (self.__name__,)
 
     def __repr__(self):
         path = '/'.join(self._getPath(True))
