@@ -466,7 +466,10 @@ class Property(Persistent):
         raise NotImplementedError
 
     def _getPath(self, first=False):
-        return self.__parent__._getPath() + (self.__name__,)
+        if self.__parent__ is None:
+            return (self.__name__,)
+        else:
+            return self.__parent__._getPath() + (self.__name__,)
 
     def __repr__(self):
         path = '/'.join(self._getPath(True))
@@ -493,7 +496,8 @@ class ObjectProperty(ObjectBase, Property):
         for k, v in value.iteritems():
             if k == '__name__':
                 if v != self.getName():
-                    raise ValueError("Mismatched names")
+                    raise ValueError("Mismatched names %s and %s" %(
+                        v, self.getName()))
             else:
                 self.setProperty(k, v)
 
@@ -588,7 +592,12 @@ class ListProperty(ContainerProperty):
         for v in values:
             name = v.get('__name__')
             if name is not None:
-                ob = self.getChild(name)
+                # XXX AT: creating a child with a known name is useful when
+                # storing dict-like structure as a list.
+                if self.hasChild(name):
+                    ob = self.getChild(name)
+                else:
+                    ob = self.addValue(name=name)
             else:
                 ob = self.addValue()
                 name = ob.getName()
