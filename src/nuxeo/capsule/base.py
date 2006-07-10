@@ -33,6 +33,10 @@ from nuxeo.capsule.interfaces import IListProperty
 from nuxeo.capsule.interfaces import IBinaryProperty
 from nuxeo.capsule.interfaces import IReference
 
+from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
+from Products.CPSCore.IndexationManager import get_indexation_manager
+from Products.CPSCore.EventServiceTool import getEventService
+
 _MARKER = object()
 
 
@@ -243,7 +247,42 @@ class Children(ContainerBase):
             return ppath
 
 
-class Document(ObjectBase, Acquisition.Implicit):
+class Indexable(CMFCatalogAware):
+    """Indexing helper methods
+    """
+
+    def _reindexObject(self, idxs=[]):
+        """Called to reindex when the object has changed."""
+        if 'allowedRolesAndUsers' in idxs:
+            # Both must be updated
+            idxs.append('localUsersWithRoles')
+        return CMFCatalogAware.reindexObject(self, idxs=idxs)
+
+    # overloaded
+    def reindexObject(self, idxs=[]):
+        """Schedule object for reindexation
+        """
+        get_indexation_manager().push(self, idxs=idxs)
+
+    def indexObject(self):
+        """Schedule object for indexing.
+        """
+        get_indexation_manager().push(self, idxs=[])
+
+    def _reindexObjectSecurity(self, skip_self=False):
+        """Called to security-related indexes."""
+        # Notify that this proxy's security has changed.
+        # Listeners will have to recurse if necessary.
+        # (The notification for the object repo is done by the repo.)
+        evtool = getEventService(self)
+        evtool.notify('sys_modify_security', self, {})
+        return CMFCatalogAware.reindexObjectSecurity(self, skip_self)
+
+    def reindexObjectSecurity(self):
+        get_indexation_manager().push(self, with_security=True)
+
+
+class Document(ObjectBase, Indexable, Acquisition.Implicit):
     """Capsule Document.
 
     Properties
