@@ -188,16 +188,17 @@ class IProperty(Interface):
         Returns a unicode string.
         """
 
-    def setPythonValue(value):
-        """Set the value of a property.
+    def setDTO(value):
+        """Set a property from a DTO.
 
-        `value` is a basic python datastructure.
+        `value` is a Data Transfer Object, usually a basic python
+        datastructure.
         """
 
-    def getPythonValue():
-        """Get the value of a property.
+    def getDTO():
+        """Get a DTO from a property.
 
-        Returns a basic python datastructure.
+        Returns a Data Transfer Object, usually a basic python datastructure.
         """
 
 
@@ -259,7 +260,7 @@ class IResourceProperty(IObjectProperty):
 class IResource(Interface):
     """A binary object.
 
-    This is the python version of a IResourceProperty.
+    This is the DTO of a IResourceProperty.
     """
 
     mime_type = Attribute("The MIME type for this resource")
@@ -286,7 +287,7 @@ class IResource(Interface):
 class IBlob(Interface):
     """A blob.
 
-    This is the python version of a JCR Binary property.
+    This is the DTO of a JCR Binary property.
     """
 
 

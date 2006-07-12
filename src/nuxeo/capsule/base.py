@@ -438,7 +438,7 @@ class Document(ObjectBase, Acquisition.Implicit):
         res.append("<br/><em>Properties:</em><br/>")
         for key, value in sorted(self.getProperties().items()):
             if IProperty.providedBy(value):
-                value = value.getPythonValue()
+                value = value.getDTO()
             res.append('<strong>%s</strong>: %s<br/>' %
                        (escape(str(key)), escape(repr(value))))
 
@@ -485,10 +485,10 @@ class Property(Persistent):
         path = '/'.join(self._getPath(True))
         return '<%s at %s>' % (self.__class__.__name__, path)
 
-    def setPythonValue(self, value):
+    def setDTO(self, value):
         raise NotImplementedError
 
-    def getPythonValue(self):
+    def getDTO(self):
         raise NotImplementedError
 
 
@@ -497,7 +497,7 @@ class ObjectProperty(ObjectBase, Property):
     """
     zope.interface.implements(IObjectProperty)
 
-    def setPythonValue(self, value):
+    def setDTO(self, value):
         """See `nuxeo.capsule.interfaces.IProperty`
 
         `value` is a mapping.
@@ -511,7 +511,7 @@ class ObjectProperty(ObjectBase, Property):
             else:
                 self.setProperty(k, v)
 
-    def getPythonValue(self):
+    def getDTO(self):
         """See `nuxeo.capsule.interfaces.IProperty`
 
         Returns a mapping.
@@ -519,9 +519,9 @@ class ObjectProperty(ObjectBase, Property):
         value = {}
         for k, v in self._props.iteritems():
             if IProperty.providedBy(v):
-                v = v.getPythonValue()
+                v = v.getDTO()
             value[k] = v
-        # Name is stored so that setPythonValue can recognize list items
+        # Name is stored so that setDTO can recognize list items
         value['__name__'] = self.getName()
         return value
 
@@ -535,10 +535,10 @@ class ContainerProperty(ContainerBase, ObjectProperty):
         ObjectProperty.__init__(self, name, schema)
         ContainerBase.__init__(self, name) # with ordering
 
-    def setPythonValue(self, value):
+    def setDTO(self, value):
         raise NotImplementedError
 
-    def getPythonValue(self):
+    def getDTO(self):
         raise NotImplementedError
 
 
@@ -569,7 +569,7 @@ class ListProperty(ContainerProperty):
         """
         raise NotImplementedError("Must be subclassed")
 
-    def getPythonValue(self):
+    def getDTO(self):
         """See `nuxeo.capsule.interfaces.IProperty`
 
         Returns a list of python simple types.
@@ -577,11 +577,11 @@ class ListProperty(ContainerProperty):
         l = []
         for ob in self:
             assert IProperty.providedBy(ob)
-            v = ob.getPythonValue()
+            v = ob.getDTO()
             l.append(v)
         return l
 
-    def setPythonValue(self, values):
+    def setDTO(self, values):
         """See `nuxeo.capsule.interfaces.IProperty`
 
         `value` is a list of python simple types.
@@ -612,7 +612,7 @@ class ListProperty(ContainerProperty):
                 ob = self.addValue()
                 name = ob.getName()
             names.append(name)
-            ob.setPythonValue(v)
+            ob.setDTO(v)
         # Set final order
         self.reorder(names)
 
@@ -645,7 +645,7 @@ class ResourceProperty(ObjectProperty):
     """
     zope.interface.implements(IResourceProperty)
 
-    def setPythonValue(self, value):
+    def setDTO(self, value):
         """See `nuxeo.capsule.interfaces.IProperty`
 
         `value` is a IResource or a Zope 2 File object.
@@ -676,7 +676,7 @@ class ResourceProperty(ObjectProperty):
         self.setProperty('jcr:mimeType', mime_type)
         self.setProperty('jcr:encoding', encoding)
 
-    def getPythonValue(self):
+    def getDTO(self):
         """See `nuxeo.capsule.interfaces.IProperty`
 
         Returns a IResource or None
@@ -695,7 +695,7 @@ class ResourceProperty(ObjectProperty):
 class Resource(object):
     """A file object.
 
-    This is the python version of a ResourceProperty.
+    This is the DTO of a ResourceProperty.
     """
     zope.interface.implements(IResource)
 
@@ -744,7 +744,7 @@ class Resource(object):
 class Blob(object):
     """A binary blob.
 
-    This is the python version of a JCR Binary property.
+    This is the DTO of a JCR Binary property.
     """
     zope.interface.implements(IBlob)
 
@@ -766,7 +766,7 @@ class Blob(object):
 class Reference(object):
     """A reference to another object through its UUID.
 
-    This is the python version of a JCR Reference property.
+    This is the DTO of a JCR Reference property.
     """
     zope.interface.implements(IReference)
 
