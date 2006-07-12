@@ -16,9 +16,13 @@
 """Capsule basic implementation.
 """
 
-import Acquisition
-from persistent import Persistent
+import re
+import logging
 from cStringIO import StringIO
+
+import Acquisition
+from Acquisition import aq_base
+from persistent import Persistent
 
 import zope.interface
 from nuxeo.capsule.interfaces import IObjectBase
@@ -26,14 +30,20 @@ from nuxeo.capsule.interfaces import IContainerBase
 from nuxeo.capsule.interfaces import IDocument
 from nuxeo.capsule.interfaces import IWorkspace
 from nuxeo.capsule.interfaces import IChildren
+
 from nuxeo.capsule.interfaces import IProperty
 from nuxeo.capsule.interfaces import IObjectProperty
 from nuxeo.capsule.interfaces import IContainerProperty
 from nuxeo.capsule.interfaces import IListProperty
-from nuxeo.capsule.interfaces import IBinaryProperty
+from nuxeo.capsule.interfaces import IResourceProperty
+
+from nuxeo.capsule.interfaces import IResource
+from nuxeo.capsule.interfaces import IBlob
 from nuxeo.capsule.interfaces import IReference
 
 _MARKER = object()
+
+logger = logging.getLogger('nuxeo.capsule.base')
 
 
 class ObjectBase(Persistent):
@@ -624,40 +634,139 @@ class ListProperty(ContainerProperty):
         return value in self._children
 
 
-class BinaryProperty(Property):
-    """A binary object (blob).
+CONTENT_TYPE_MATCHER = re.compile('([^;\s]+)\s*(?:;\s*charset=([^\s]+)\s*)?$',
+                                  re.I)
+
+
+class ResourceProperty(ObjectProperty):
+    """A resource property.
+
+    Designed to hold a JCR nt:resource.
     """
-    zope.interface.implements(IBinaryProperty)
+    zope.interface.implements(IResourceProperty)
 
-    mime_type = None
-    encoding = None
+    def setPythonValue(self, value):
+        """See `nuxeo.capsule.interfaces.IProperty`
 
-    def __init__(self, data, mime_type=None, encoding=None):
-        if isinstance(data, unicode):
-            raise ValueError('unicode data')
-        self._value = data
-        self._len = len(data)
+        `value` is a IResource or a Zope 2 File object.
+        """
+        if value is None:
+            data = None
+            mime_type = None
+            encoding = None
+        elif IResource.providedBy(value):
+            blob = value.blob
+            mime_type = value.mime_type
+            encoding = value.encoding
+        else:
+            # XXX zope 2 dependency...
+            from OFS.Image import File
+            if isinstance(value, File):
+                blob = Blob(str(value.data))
+                match = CONTENT_TYPE_MATCHER.match(value.content_type)
+                if match is None:
+                    logger.warning("Bad content-type %r" % value.content_type)
+                    mime_type = None
+                    encoding = None
+                else:
+                    mime_type, encoding = match.groups()
+            else:
+                raise TypeError(value)
+        self.setProperty('jcr:data', blob)
+        self.setProperty('jcr:mimeType', mime_type)
+        self.setProperty('jcr:encoding', encoding)
+
+    def getPythonValue(self):
+        """See `nuxeo.capsule.interfaces.IProperty`
+
+        Returns a IResource or None
+        """
+        blob = self.getProperty('jcr:data', None)
+        if blob is None:
+            return None
+        mime_type = self.getProperty('jcr:mimeType', None)
+        encoding = self.getProperty('jcr:encoding', None)
+        return Resource(blob, mime_type=mime_type, encoding=encoding)
+
+
+##################################################
+# Plain objects
+
+class Resource(object):
+    """A file object.
+
+    This is the python version of a ResourceProperty.
+    """
+    zope.interface.implements(IResource)
+
+    def __init__(self, blob, mime_type=None, encoding=None):
+        if not isinstance(blob, Blob):
+            print 'XXX', repr(blob)
+            raise ValueError("%s data forbidden" % type(blob))
+        self.blob = blob
+        self.blob_len = len(blob)
         self.mime_type = mime_type
         self.encoding = encoding
 
-    def open(self):
-        """See `nuxeo.capsule.interfaces.IBinaryProperty`
-        """
-        return StringIO(self._value)
-
     def __len__(self):
-        """See `nuxeo.capsule.interfaces.IBinaryProperty`
+        """See `nuxeo.capsule.interfaces.IResourceProperty`
         """
-        return self._len
+        return self.blob_len
 
     def __str__(self):
-        """See `nuxeo.capsule.interfaces.IBinaryProperty`
+        """See `nuxeo.capsule.interfaces.IResourceProperty`
         """
-        return self._value
+        return str(self.blob)
+
+    def open(self):
+        """See `nuxeo.capsule.interfaces.IResourceProperty`
+        """
+        return StringIO(str(self.blob))
+
+    def getFileUpload(self):
+        """See `nuxeo.capsule.interfaces.IResourceProperty`
+
+        Used by widgets. XXX should be lazy on the open/fetching!
+        """
+        # XXX Zope 2 dependency
+        from ZPublisher.HTTPRequest import FileUpload
+        from Products.CPSUtil.file import SimpleFieldStorage
+        filename = 'noname.bin'
+        if self.encoding is None:
+            content_type = self.mime_type
+        else:
+            content_type = '%s; charset=%s' % (self.mime_type, self.encoding)
+        headers = {'content-type': content_type}
+        fs = SimpleFieldStorage(self.open(), filename, headers)
+        return FileUpload(fs)
+
+
+class Blob(object):
+    """A binary blob.
+
+    This is the python version of a JCR Binary property.
+    """
+    zope.interface.implements(IBlob)
+
+    def __init__(self, data):
+        if not isinstance(data, str):
+            raise ValueError("%s data forbidden" % type(data))
+        self.data = data
+
+    def __str__(self):
+        return self.data
+
+    def __len__(self):
+        return len(self.data)
+
+    def __repr__(self):
+        return "<Blob at 0x%08x>" % id(self)
 
 
 class Reference(object):
     """A reference to another object through its UUID.
+
+    This is the python version of a JCR Reference property.
     """
     zope.interface.implements(IReference)
 

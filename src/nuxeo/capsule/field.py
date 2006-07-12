@@ -18,6 +18,7 @@
 
 import zope.interface
 from zope.schema import Field
+from zope.schema import Text
 from zope.schema import MinMaxLen
 from zope.schema import List
 from zope.schema import Object
@@ -25,13 +26,14 @@ from zope.schema import Object
 from nuxeo.capsule.interfaces import IObjectPropertyField
 from nuxeo.capsule.interfaces import IContainerPropertyField
 from nuxeo.capsule.interfaces import IListPropertyField
-from nuxeo.capsule.interfaces import IBinaryField
+from nuxeo.capsule.interfaces import IBlobField
 from nuxeo.capsule.interfaces import IReferenceField
 
 from nuxeo.capsule.base import ObjectProperty
 from nuxeo.capsule.base import ContainerProperty
 from nuxeo.capsule.base import ListProperty
-from nuxeo.capsule.base import BinaryProperty
+from nuxeo.capsule.base import ResourceProperty
+from nuxeo.capsule.base import Blob
 from nuxeo.capsule.base import Reference
 
 
@@ -70,11 +72,11 @@ class ListPropertyField(ContainerPropertyField):
         List.__init__(self, value_type=subfield, **kw)
 
 
-class BinaryField(MinMaxLen, Field):
+class BlobField(MinMaxLen, Field):
     """A field containing a python file-like seekable object.
     """
-    zope.interface.implements(IBinaryField)
-    _type = BinaryProperty
+    zope.interface.implements(IBlobField)
+    _type = Blob
 
 
 class ReferenceField(Field):
@@ -82,3 +84,18 @@ class ReferenceField(Field):
     """
     zope.interface.implements(IReferenceField)
     _type = Reference
+
+
+# Inject fields into IResourceProperty
+from nuxeo.capsule.interfaces import IResourceProperty
+attrs = IResourceProperty._InterfaceClass__attrs
+field = BlobField(__name__='jcr:data')
+field.interface = IResourceProperty
+attrs['jcr:data'] = field
+field = Text(__name__='jcr:mimeType')
+field.interface = IResourceProperty
+attrs['jcr:mimeType'] = field
+field = Text(__name__='jcr:encoding')
+field.interface = IResourceProperty
+attrs['jcr:encoding'] = field
+del field, attrs

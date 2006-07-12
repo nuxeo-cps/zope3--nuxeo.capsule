@@ -38,11 +38,6 @@ class InterfaceTests(unittest.TestCase):
         from nuxeo.capsule.base import ListProperty
         verifyClass(IListProperty, ListProperty)
 
-    def test_BinaryProperty(self):
-        from nuxeo.capsule.interfaces import IBinaryProperty
-        from nuxeo.capsule.base import BinaryProperty
-        verifyClass(IBinaryProperty, BinaryProperty)
-
     def test_Document(self):
         from nuxeo.capsule.interfaces import IDocument
         from nuxeo.capsule.base import Document
@@ -52,11 +47,6 @@ class InterfaceTests(unittest.TestCase):
         from nuxeo.capsule.interfaces import IChildren
         from nuxeo.capsule.base import Children
         verifyClass(IChildren, Children)
-
-    def test_BinaryField(self):
-        from nuxeo.capsule.interfaces import IBinaryField
-        from nuxeo.capsule.field import BinaryField
-        verifyClass(IBinaryField, BinaryField)
 
     def test_ListPropertyField(self):
         from nuxeo.capsule.interfaces import IListPropertyField
@@ -83,6 +73,21 @@ class InterfaceTests(unittest.TestCase):
         from nuxeo.capsule.interfaces import IReference
         from nuxeo.capsule.base import Reference
         verifyClass(IReference, Reference)
+
+    def test_Blob(self):
+        from nuxeo.capsule.interfaces import IBlob
+        from nuxeo.capsule.base import Blob
+        verifyClass(IBlob, Blob)
+
+    def test_Resource(self):
+        from nuxeo.capsule.interfaces import IResource
+        from nuxeo.capsule.base import Resource
+        verifyClass(IResource, Resource)
+
+    def test_ResourceProperty(self):
+        from nuxeo.capsule.interfaces import IResourceProperty
+        from nuxeo.capsule.base import ResourceProperty
+        verifyClass(IResourceProperty, ResourceProperty)
 
 
 def test_Reference():

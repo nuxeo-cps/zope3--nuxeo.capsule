@@ -245,27 +245,49 @@ class IListProperty(IContainerProperty):
         Returns an IProperty
         """
 
-class IBinaryProperty(IProperty):
-    """A binary object (blob).
+class IResourceProperty(IObjectProperty):
+    """A resource property.
 
-    This is specified in a schema using a IBinaryField.
+    Designed to hold a JCR nt:resource.
     """
 
-    mime_type = Attribute("The MIME type for this binary")
+    #Injected later: from field.py
+    # jcr:data
+    # jcr:mimeType
+    # jcr:encoding
 
-    encoding = Attribute("The encoding type for this binary")
+class IResource(Interface):
+    """A binary object.
 
-    def open():
-        """Get a seekable file-like object for this binary.
-        """
+    This is the python version of a IResourceProperty.
+    """
+
+    mime_type = Attribute("The MIME type for this resource")
+
+    encoding = Attribute("The encoding type for this resource")
 
     def __len__():
-        """Get the length of the binary.
+        """Get the length of the resource.
         """
 
     def __str__():
-        """Get a string containing the binary.
+        """Get a string containing the resource.
         """
+
+    def open():
+        """Get a seekable file-like object for this resource.
+        """
+
+    def getFileUpload():
+        """Get a (fake) file upload for this resource.
+        """
+
+
+class IBlob(Interface):
+    """A blob.
+
+    This is the python version of a JCR Binary property.
+    """
 
 
 class IReference(Interface):
@@ -419,8 +441,8 @@ class IListPropertyField(IContainerPropertyField, IList):
     """
 
 
-class IBinaryField(IMinMaxLen, ICapsuleField):
-    """Schema field containing a seekable file-like object.
+class IBlobField(Interface):
+    """Schema field containing a blob.
     """
 
 class IReferenceField(Interface):
