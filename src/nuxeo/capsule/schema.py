@@ -65,9 +65,14 @@ class SchemaManager(object):
                 klass = self._classes[name]
             else:
                 # Find most specific schema extending the one passed
+                if name not in self._schemas:
+                    print 'XXX %s not in schemas!' % name
                 schema = self._schemas[name]
                 klass = None
                 for n, k in self._classes_spec.iteritems():
+                    if n not in self._schemas:
+                        print 'XXX %s in classes but not schemas!' % n
+                        continue
                     s = self._schemas[n]
                     if schema.isOrExtends(s):
                         if klass is None or s.extends(best):
@@ -107,6 +112,10 @@ class SchemaManager(object):
         """See `nuxeo.capsule.interfaces.ISchemaManager`
         """
         if name in self._classes_spec:
-            raise ValueError("Class %r already registered" % name)
+            prev = self._classes_spec[name]
+            if prev == klass:
+                return
+            raise ValueError("Class %r (%r) already registered for %r" %
+                             (name, klass, prev))
         self._classes_spec[name] = klass
         self._classes = {}
