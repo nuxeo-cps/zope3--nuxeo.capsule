@@ -246,6 +246,8 @@ class Children(ContainerBase):
         raise NotImplementedError
 
     def _getPath(self, first=False):
+        if self.__parent__ is None:
+            return (self.__name__,)
         ppath = self.__parent__._getPath()
         if first:
             return ppath + (self.__name__,)
