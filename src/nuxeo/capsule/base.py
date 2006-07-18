@@ -424,6 +424,9 @@ class Document(ObjectBase, Acquisition.Implicit):
     def manage_main(self, REQUEST=None, RESPONSE=None):
         """View object. XXX"""
         from cgi import escape
+
+        self._p_activate()
+
         res = ['<html>']
 
         res.append("<em>Internal:</em><br/>")
@@ -436,6 +439,8 @@ class Document(ObjectBase, Acquisition.Implicit):
                 ev = '<a href="../manage_main">%s</a>' % ev
             res.append('<strong>%s</strong>: %s<br/>'
                        % (escape(str(key)), ev))
+        res.append('<strong>__class__</strong>: %s.%s<br/>'
+                   % (self.__class__.__module__, self.__class__.__name__))
 
         res.append("<br/><em>Properties:</em><br/>")
         for key, value in sorted(self.getProperties().items()):
