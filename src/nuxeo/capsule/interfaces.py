@@ -364,6 +364,10 @@ class IDocument(IObjectBase, IContainerBase):
     # def getBaseVersion()
 
 
+class IProxy(IDocument):
+    """Capsule proxy.
+    """
+
 class IWorkspace(IDocument):
     """Capsule workspace, root of a tree of documents.
     """
