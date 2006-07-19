@@ -115,6 +115,10 @@ class IContainerBase(Interface):
         Returns an iterable of children implementing IObjectBase.
         """
 
+    def keys():
+        """Get the list of children names.
+        """
+
     def __iter__():
         """Get an iterable of children.
         """

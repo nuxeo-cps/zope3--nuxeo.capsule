@@ -167,6 +167,14 @@ class ContainerBase(Persistent):
         """
         return iter(self)
 
+    def keys(self):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        if self._order is None:
+            return self._children.keys()
+        else:
+            return list(self._order)
+
     def __iter__(self):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
