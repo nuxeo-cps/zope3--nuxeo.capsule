@@ -410,64 +410,6 @@ class Document(ObjectBase, Acquisition.Implicit):
         """
         return True # XXX
 
-    #
-    # ZMI # XXX here for now, later in a Zope2-specific subclass
-    #
-
-    def getId(self):
-        """Get the id of the object."""
-        return self.getName()
-
-    def objectIds(self):
-        """Get children ids
-        """
-        return self._children.keys()
-
-    def objectValues(self):
-        """Get children
-        """
-        return self.getChildren()
-
-    manage_main__roles__ = None # Public
-    def manage_main(self, REQUEST=None, RESPONSE=None):
-        """View object. XXX"""
-        from cgi import escape
-
-        self._p_activate()
-
-        res = ['<html>']
-
-        res.append("<em>Internal:</em><br/>")
-        for key in sorted(self.__dict__.keys()):
-            if key in ('_children', '_order', '_props'):
-                continue
-            value = self.__dict__[key]
-            ev = escape(repr(value))
-            if key == '__parent__':
-                ev = '<a href="../manage_main">%s</a>' % ev
-            res.append('<strong>%s</strong>: %s<br/>'
-                       % (escape(str(key)), ev))
-        res.append('<strong>__class__</strong>: %s.%s<br/>'
-                   % (self.__class__.__module__, self.__class__.__name__))
-
-        res.append("<br/><em>Properties:</em><br/>")
-        for key, value in sorted(self.getProperties().items()):
-            if IProperty.providedBy(value):
-                value = value.getDTO()
-            res.append('<strong>%s</strong>: %s<br/>' %
-                       (escape(str(key)), escape(repr(value))))
-
-        res.append("<br/><em>Children:</em><br/>")
-        for value in self.getChildren():
-            name = value.getName()
-            href = './'+name # handle : in names
-            ev = escape(repr(value))
-            ev = '<a href="%s/manage_main">%s</a>' % (href, ev)
-            res.append('<strong>%s</strong>: %s<br/>' %
-                       (escape(str(name)), ev))
-        res.append('</html>')
-        return '\n'.join(res)
-
 
 class Workspace(Document):
     """Root of a tree of documents.
