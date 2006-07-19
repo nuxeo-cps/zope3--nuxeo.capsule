@@ -26,6 +26,7 @@ A schema is a Zope 3 interface with fields.
 from zope.interface import Interface
 from zope.interface import Attribute
 
+import zope.app.container.constraints
 from zope.schema.interfaces import IMinMaxLen
 from zope.schema.interfaces import IList
 from zope.schema.interfaces import IObject
@@ -381,6 +382,8 @@ class IChildren(IContainerBase):
 
     Children all have distinct names, and can be ordered or not.
     """
+
+    zope.app.container.constraints.contains(IDocument)
 
     def getTypeName():
         """Get the type of this intermediate object.
