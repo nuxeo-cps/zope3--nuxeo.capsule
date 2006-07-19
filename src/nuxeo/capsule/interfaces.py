@@ -369,6 +369,18 @@ class IDocument(IObjectBase, IContainerBase):
     # def getBaseVersion()
 
 
+class IVersionHistory(IDocument):
+    """Capsule version history.
+    """
+
+class IVersion(IDocument):
+    """Capsule version.
+    """
+
+class IFrozenNode(IDocument):
+    """Capsule frozen node.
+    """
+
 class IProxy(IDocument):
     """Capsule proxy.
     """
