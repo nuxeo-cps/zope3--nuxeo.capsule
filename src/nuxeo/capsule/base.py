@@ -328,7 +328,10 @@ class Document(ObjectBase, Acquisition.Implicit):
     def getChild(self, name, default=_MARKER):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
-        return self._children.getChild(name, default)
+        if default is not _MARKER:
+            return self._children.getChild(name, default)
+        else:
+            return self._children.getChild(name)
 
     def __getitem__(self, name):
         """See `nuxeo.capsule.interfaces.IContainerBase`
