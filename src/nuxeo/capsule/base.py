@@ -511,6 +511,11 @@ class ListProperty(ContainerProperty):
 
     def __init__(self, name, schema):
         ContainerProperty.__init__(self, name, schema)
+        self._init()
+
+    def _init(self):
+        # This will be called in some cases by __setstate__
+        schema = self.getSchema()
         types = schema['__setitem__'].getTaggedValue('precondition').types
         assert len(types) == 1, types
         value_schema = types[0]
