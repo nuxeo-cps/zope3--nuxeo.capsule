@@ -41,6 +41,11 @@ from nuxeo.capsule.interfaces import IResource
 from nuxeo.capsule.interfaces import IBlob
 from nuxeo.capsule.interfaces import IReference
 
+# XXX zope 2 dependency...
+from ZPublisher.HTTPRequest import FileUpload
+from Products.CPSUtil.file import SimpleFieldStorage
+
+
 _MARKER = object()
 
 logger = logging.getLogger('nuxeo.capsule.base')
@@ -653,6 +658,14 @@ class ResourceProperty(ObjectProperty):
         encoding = self.getProperty('jcr:encoding', None)
         return Resource(blob, mime_type=mime_type, encoding=encoding)
 
+    @staticmethod
+    def getFileUploadFromDTO(dto):
+        """Used by widget when the datamodel contains a DTO.
+        """
+        return Resource.getFileUploadFromData(
+            blob=dto['jcr:data'],
+            encoding=dto['jcr:encoding'],
+            mime_type=dto['jcr:mimeType'])
 
 ##################################################
 # Plain objects
@@ -693,16 +706,23 @@ class Resource(object):
 
         Used by widgets. XXX should be lazy on the open/fetching!
         """
-        # XXX Zope 2 dependency
-        from ZPublisher.HTTPRequest import FileUpload
-        from Products.CPSUtil.file import SimpleFieldStorage
-        filename = 'noname.bin'
-        if self.encoding is None:
-            content_type = self.mime_type
+        return self.getFileUploadFromData(
+            blob=self.blob,
+            encoding=self.encoding,
+            mime_type=self.mime_type)
+
+    @staticmethod
+    def getFileUploadFromData(blob, encoding, mime_type):
+        if blob is None:
+            return None
+        if encoding is None:
+            content_type = mime_type
         else:
-            content_type = '%s; charset=%s' % (self.mime_type, self.encoding)
+            content_type = '%s; charset=%s' % (mime_type, encoding)
         headers = {'content-type': content_type}
-        fs = SimpleFieldStorage(self.open(), filename, headers)
+        filename = 'noname.bin'
+        io = StringIO(str(blob))
+        fs = SimpleFieldStorage(io, filename, headers)
         return FileUpload(fs)
 
 
