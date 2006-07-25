@@ -458,6 +458,10 @@ class Property(Persistent):
     def getDTO(self):
         raise NotImplementedError
 
+    @staticmethod
+    def emptyDTO(iface, default):
+        return default
+
 
 class ObjectProperty(ObjectBase, Property):
     """A complex type with fields based on a schema.
@@ -627,13 +631,9 @@ class ResourceProperty(ObjectProperty):
 
         `value` is a IResource or a Zope 2 File object.
         """
-        if value is None or isinstance(value, dict):
-            # None or datamodel init
-            blob = None
-            mime_type = None
-            encoding = None
-            last_modified = datetime(2000, 1, 1)
-        elif IResource.providedBy(value):
+        if value is None:
+            raise ValueError('None')
+        if IResource.providedBy(value):
             blob = value.blob
             mime_type = value.mime_type
             encoding = value.encoding
@@ -677,14 +677,11 @@ class ResourceProperty(ObjectProperty):
                         last_modified=last_modified)
 
     @staticmethod
-    def getFileUploadFromDTO(dto):
-        """Used by widget when the datamodel contains a DTO.
+    def emptyDTO(iface, default):
+        """Return a DTO for an empty property about to be created.
         """
-        return Resource.getFileUploadFromData(
-            blob=dto['jcr:data'],
-            mime_type=dto['jcr:mimeType'],
-            encoding=dto['jcr:encoding'],
-            last_modified=dto['jcr:lastModified'])
+        return None
+
 
 ##################################################
 # Plain objects
@@ -693,6 +690,8 @@ class Resource(object):
     """A file object.
 
     This is the DTO of a ResourceProperty.
+
+    A Resource cannot have a None blob.
     """
     zope.interface.implements(IResource)
 
@@ -727,31 +726,20 @@ class Resource(object):
 
         Used by widgets. XXX should be lazy on the open/fetching!
         """
-        return self.getFileUploadFromData(
-            blob=self.blob,
-            mime_type=self.mime_type,
-            encoding=self.encoding,
-            last_modified=self.last_modified)
+        if self.encoding is None:
+            content_type = self.mime_type
+        else:
+            content_type = '%s; charset=%s' % (self.mime_type, self.encoding)
+        headers = {'content-type': content_type}
+        filename = 'noname.bin'
+        fs = SimpleFieldStorage(self.open(), filename, headers)
+        return FileUpload(fs)
 
     def getContentType(self):
         if self.encoding is None:
             return self.mime_type
         else:
             return '%s; charset=%s' % (self.mime_type, self.encoding)
-
-    @staticmethod
-    def getFileUploadFromData(blob, mime_type, encoding, last_modified):
-        if blob is None:
-            return None
-        if encoding is None:
-            content_type = mime_type
-        else:
-            content_type = '%s; charset=%s' % (mime_type, encoding)
-        headers = {'content-type': content_type}
-        filename = 'noname.bin'
-        io = StringIO(str(blob))
-        fs = SimpleFieldStorage(io, filename, headers)
-        return FileUpload(fs)
 
 
 class Blob(object):
