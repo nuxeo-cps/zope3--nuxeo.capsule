@@ -18,6 +18,8 @@
 
 import re
 import logging
+import time
+from datetime import datetime
 from cStringIO import StringIO
 
 import Acquisition
@@ -615,6 +617,11 @@ class ResourceProperty(ObjectProperty):
     """
     zope.interface.implements(IResourceProperty)
 
+    def getTypeName(self):
+        """See `nuxeo.capsule.interfaces.IObjectBase`
+        """
+        return 'nt:resource' # otherwise it would use 'IResourceProperty'
+
     def setDTO(self, value):
         """See `nuxeo.capsule.interfaces.IProperty`
 
@@ -624,10 +631,12 @@ class ResourceProperty(ObjectProperty):
             data = None
             mime_type = None
             encoding = None
+            last_modified = datetime(2000, 1, 1)
         elif IResource.providedBy(value):
             blob = value.blob
             mime_type = value.mime_type
             encoding = value.encoding
+            last_modified = value.last_modified
         else:
             # XXX zope 2 dependency...
             from OFS.Image import File
@@ -640,11 +649,17 @@ class ResourceProperty(ObjectProperty):
                     encoding = None
                 else:
                     mime_type, encoding = match.groups()
+                t = value._p_mtime
+                if t is not None:
+                    last_modified = datetime(*time.gmtime(t)[:6])
+                else:
+                    last_modified = datetime(2000, 1, 1)
             else:
                 raise TypeError(value)
         self.setProperty('jcr:data', blob)
         self.setProperty('jcr:mimeType', mime_type)
         self.setProperty('jcr:encoding', encoding)
+        self.setProperty('jcr:lastModified', last_modified)
 
     def getDTO(self):
         """See `nuxeo.capsule.interfaces.IProperty`
@@ -656,7 +671,9 @@ class ResourceProperty(ObjectProperty):
             return None
         mime_type = self.getProperty('jcr:mimeType', None)
         encoding = self.getProperty('jcr:encoding', None)
-        return Resource(blob, mime_type=mime_type, encoding=encoding)
+        last_modified = self.getProperty('jcr:lastModified', None)
+        return Resource(blob, mime_type=mime_type, encoding=encoding,
+                        last_modified=last_modified)
 
     @staticmethod
     def getFileUploadFromDTO(dto):
@@ -664,8 +681,9 @@ class ResourceProperty(ObjectProperty):
         """
         return Resource.getFileUploadFromData(
             blob=dto['jcr:data'],
+            mime_type=dto['jcr:mimeType'],
             encoding=dto['jcr:encoding'],
-            mime_type=dto['jcr:mimeType'])
+            last_modified=dto['jcr:lastModified'])
 
 ##################################################
 # Plain objects
@@ -677,7 +695,8 @@ class Resource(object):
     """
     zope.interface.implements(IResource)
 
-    def __init__(self, blob, mime_type=None, encoding=None):
+    def __init__(self, blob, mime_type=None, encoding=None,
+                 last_modified=None):
         if not isinstance(blob, Blob):
             print 'XXX', repr(blob)
             raise ValueError("%s data forbidden" % type(blob))
@@ -685,6 +704,7 @@ class Resource(object):
         self.blob_len = len(blob)
         self.mime_type = mime_type
         self.encoding = encoding
+        self.last_modified = last_modified
 
     def __len__(self):
         """See `nuxeo.capsule.interfaces.IResourceProperty`
@@ -708,11 +728,18 @@ class Resource(object):
         """
         return self.getFileUploadFromData(
             blob=self.blob,
+            mime_type=self.mime_type,
             encoding=self.encoding,
-            mime_type=self.mime_type)
+            last_modified=self.last_modified)
+
+    def getContentType(self):
+        if self.encoding is None:
+            return self.mime_type
+        else:
+            return '%s; charset=%s' % (self.mime_type, self.encoding)
 
     @staticmethod
-    def getFileUploadFromData(blob, encoding, mime_type):
+    def getFileUploadFromData(blob, mime_type, encoding, last_modified):
         if blob is None:
             return None
         if encoding is None:

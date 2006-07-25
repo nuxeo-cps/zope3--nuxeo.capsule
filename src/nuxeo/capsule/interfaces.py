@@ -258,9 +258,10 @@ class IResourceProperty(IObjectProperty):
     """
 
     #Injected later: from field.py
-    # jcr:data
-    # jcr:mimeType
-    # jcr:encoding
+    # jcr:data (Binary)
+    # jcr:mimeType (String)
+    # jcr:encoding (String)
+    # jcr:lastModified (Date)
 
 class IResource(Interface):
     """A binary object.

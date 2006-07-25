@@ -19,6 +19,7 @@
 import zope.interface
 from zope.schema import Field
 from zope.schema import Text
+from zope.schema import Datetime
 from zope.schema import MinMaxLen
 from zope.schema import List
 from zope.schema import Object
@@ -89,13 +90,13 @@ class ReferenceField(Field):
 # Inject fields into IResourceProperty
 from nuxeo.capsule.interfaces import IResourceProperty
 attrs = IResourceProperty._InterfaceClass__attrs
-field = BlobField(__name__='jcr:data')
-field.interface = IResourceProperty
-attrs['jcr:data'] = field
-field = Text(__name__='jcr:mimeType')
-field.interface = IResourceProperty
-attrs['jcr:mimeType'] = field
-field = Text(__name__='jcr:encoding')
-field.interface = IResourceProperty
-attrs['jcr:encoding'] = field
-del field, attrs
+for name, klass in (
+    ('jcr:data', BlobField),
+    ('jcr:mimeType', Text),
+    ('jcr:encoding', Text),
+    ('jcr:lastModified', Datetime),
+    ):
+    field = klass(__name__=name)
+    field.interface = IResourceProperty
+    attrs[name] = field
+del field, attrs, name, klass
