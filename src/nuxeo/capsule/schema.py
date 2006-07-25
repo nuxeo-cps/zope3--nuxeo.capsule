@@ -71,7 +71,7 @@ class SchemaManager(object):
                 klass = None
                 for n, k in self._classes_spec.iteritems():
                     if n not in self._schemas:
-                        print 'XXX %s in classes but not schemas!' % n
+                        #print 'XXX %s in classes but not schemas!' % n
                         continue
                     s = self._schemas[n]
                     if schema.isOrExtends(s):
