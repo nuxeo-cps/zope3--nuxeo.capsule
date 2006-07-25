@@ -627,8 +627,9 @@ class ResourceProperty(ObjectProperty):
 
         `value` is a IResource or a Zope 2 File object.
         """
-        if value is None:
-            data = None
+        if value is None or isinstance(value, dict):
+            # None or datamodel init
+            blob = None
             mime_type = None
             encoding = None
             last_modified = datetime(2000, 1, 1)
