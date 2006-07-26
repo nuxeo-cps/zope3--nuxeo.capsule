@@ -43,10 +43,6 @@ from nuxeo.capsule.interfaces import IResource
 from nuxeo.capsule.interfaces import IBlob
 from nuxeo.capsule.interfaces import IReference
 
-# XXX zope 2 dependency...
-from ZPublisher.HTTPRequest import FileUpload
-from Products.CPSUtil.file import SimpleFieldStorage
-
 
 _MARKER = object()
 
@@ -738,6 +734,9 @@ class Resource(object):
 
         Used by widgets. XXX should be lazy on the open/fetching!
         """
+        # XXX zope 2 dependency...
+        from ZPublisher.HTTPRequest import FileUpload
+        from Products.CPSUtil.file import SimpleFieldStorage
         if self.encoding is None:
             content_type = self.mime_type
         else:
