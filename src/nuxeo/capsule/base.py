@@ -411,6 +411,11 @@ class Document(ObjectBase, Acquisition.Implicit):
 
     ##### Versioning
 
+    def restore(self, versionName=''):
+        """See `nuxeo.capsule.interfaces.IDocument`
+        """
+        raise NotImplementedError
+
     def checkout(self):
         """See `nuxeo.capsule.interfaces.IDocument`
         """

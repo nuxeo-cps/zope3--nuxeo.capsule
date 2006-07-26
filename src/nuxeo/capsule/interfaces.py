@@ -351,6 +351,10 @@ class IDocument(IObjectBase, IContainerBase):
 
     ##### Versioning
 
+    def restore(versionName=''):
+        """Restore
+        """
+
     def checkout():
         """Checkout
         """
