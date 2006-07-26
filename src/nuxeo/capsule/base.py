@@ -420,6 +420,18 @@ class Document(ObjectBase, Acquisition.Implicit):
         """
         return True # XXX
 
+    ##### Search
+
+    def locateUUID(self, uuid):
+        """See `nuxeo.capsule.interfaces.IDocument`
+        """
+        raise NotImplementedError
+
+    def searchProperty(self, prop_name, value):
+        """See `nuxeo.capsule.interfaces.IDocument`
+        """
+        raise NotImplementedError
+
 
 class Workspace(Document):
     """Root of a tree of documents.

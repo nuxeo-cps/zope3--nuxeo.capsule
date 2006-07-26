@@ -363,6 +363,24 @@ class IDocument(IObjectBase, IContainerBase):
         """Test if the document is checked out.
         """
 
+    ##### Search
+
+    def locateUUID(uuid):
+        """Get the path of a doc with a given UUID.
+
+        Return None if the UUID does not exist.
+
+        The path is relative to the JCR workspace root.
+        """
+
+    def searchProperty(prop_name, value):
+        """Search the JCR for nodes where prop_name == 'value'.
+
+        Returns a sequence of (uuid, path).
+
+        The paths are relative to the JCR workspace root.
+        """
+
     # def restore(version_or_label)
 
     # def getVersionHistory()
