@@ -160,6 +160,11 @@ class ContainerBase(Persistent):
                 return default
             raise
 
+    def __setitem__(self, name, value):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        raise NotImplementedError("Not expected to be implemented")
+
     def __getitem__(self, name):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
@@ -345,6 +350,11 @@ class Document(ObjectBase, Acquisition.Implicit):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         return self._children.getChildren()
+
+    def keys(self):
+        """See `nuxeo.capsule.interfaces.IContainerBase`
+        """
+        return self._children.keys()
 
     def __iter__(self):
         return iter(self._children)
