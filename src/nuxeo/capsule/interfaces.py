@@ -150,11 +150,19 @@ class IContainerBase(Interface):
 
         Returns the newly created IObjectBase.
 
+        For IDocument:
+          An IObjectAddedEvent event is sent.
+          An IContainerModifiedEvent event on the container is sent.
+
         Raises KeyError if a child with the same name already exists.
         """
 
     def removeChild(name):
         """Remove a child.
+
+        For IDocument:
+          An IObjectWillBeRemovedEvent event is sent.
+          An IContainerModifiedEvent event on the container is sent.
         """
 
     def __delitem__(name):
@@ -353,10 +361,16 @@ class IDocument(IObjectBase, IContainerBase):
 
     def restore(versionName=''):
         """Restore
+
+        An ObjectModifiedEvent event is sent.
         """
 
     def checkpoint():
         """Checkpoint: checkin and checkout
+
+        Returns the new frozen document created, in the context of self.
+
+        An IObjectAddedEvent event is sent on the new frozen document.
         """
 
     def isCheckedOut():
