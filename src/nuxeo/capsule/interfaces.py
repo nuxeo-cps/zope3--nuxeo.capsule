@@ -410,8 +410,8 @@ class IVersion(IDocument):
     """Capsule version.
     """
 
-class IFrozenNode(IDocument):
-    """Capsule frozen node.
+class IFrozenDocument(IDocument):
+    """Capsule frozen document.
     """
 
 class IProxy(IDocument):
