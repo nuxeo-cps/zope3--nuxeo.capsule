@@ -416,12 +416,7 @@ class Document(ObjectBase, Acquisition.Implicit):
         """
         raise NotImplementedError
 
-    def checkout(self):
-        """See `nuxeo.capsule.interfaces.IDocument`
-        """
-        raise NotImplementedError
-
-    def checkin(self):
+    def checkpoint(self):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
         raise NotImplementedError

@@ -355,12 +355,8 @@ class IDocument(IObjectBase, IContainerBase):
         """Restore
         """
 
-    def checkout():
-        """Checkout
-        """
-
-    def checkin():
-        """Checkin
+    def checkpoint():
+        """Checkpoint: checkin and checkout
         """
 
     def isCheckedOut():
