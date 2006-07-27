@@ -792,6 +792,10 @@ class Reference(object):
     """
     zope.interface.implements(IReference)
 
+    # Zope 2 security
+    __roles__ = None # ACCESS_PUBLIC
+    __allow_access_to_unprotected_subobjects__ = True
+
     def __init__(self, uuid):
         self._target = uuid
 
