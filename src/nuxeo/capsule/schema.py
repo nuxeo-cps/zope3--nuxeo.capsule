@@ -113,9 +113,12 @@ class SchemaManager(object):
         """
         if name in self._classes_spec:
             prev = self._classes_spec[name]
-            if prev == klass:
+            if issubclass(prev, klass):
+                # Previous definition is already a subclass, keep it
                 return
-            raise ValueError("Class %r (%r) already registered for %r" %
-                             (name, klass, prev))
+            if not issubclass(klass, prev):
+                raise ValueError("Redefinition of type %r from %r to %r" %
+                                 (name, prev, klass))
+            # New definition can override the old one
         self._classes_spec[name] = klass
         self._classes = {}

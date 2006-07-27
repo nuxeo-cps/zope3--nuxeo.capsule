@@ -474,6 +474,10 @@ class ISchemaManager(Interface):
 
     def setClass(name, klass):
         """Set the class for a schema and its derived ones.
+
+        This can be called several times with different classes for the
+        same schema name, but all classes must be related by subclassing
+        and the most specific one is kept.
         """
 
 
