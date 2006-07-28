@@ -400,6 +400,18 @@ class Document(ObjectBase, Acquisition.Implicit):
         """
         self._children.reorder(names)
 
+    ##### Move / Copy
+
+    def moveDocument(self, destination, name):
+        """See `nuxeo.capsule.interfaces.IDocument`
+        """
+        raise NotImplementedError
+
+    def copyDocument(self, destination, name):
+        """See `nuxeo.capsule.interfaces.IDocument`
+        """
+        raise NotImplementedError
+
     ##### Properties, see ObjectBase
 
     ##### Misc

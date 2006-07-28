@@ -349,6 +349,34 @@ class IDocument(IObjectBase, IContainerBase):
 
     ##### Children: see IContainerBase
 
+    ##### Move / Copy
+
+    def moveDocument(destination, name):
+        """Move the document to another container.
+
+        `destination` is a container document.
+        `name` is the new name in the destination container.
+
+        Returns the moved object.
+
+        An IObjectWillBeMovedEvent event is sent.
+        An IObjectMovedEvent event is sent.
+        An IContainerModifiedEvent event on the container(s) is sent.
+        """
+
+    def copyDocument(destination, name):
+        """Copy the document to another container.
+
+        `destination` is a container document.
+        `name` is the new name in the destination container.
+
+        Returns the copied object.
+
+        An IObjectAddedEvent event is sent.
+        An IContainerModifiedEvent event on the container(s) is sent.
+        An IObjectClonedEvent event is sent.
+        """
+
     ##### Misc
 
     def isReadOnly():
