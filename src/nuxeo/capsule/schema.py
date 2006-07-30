@@ -85,6 +85,7 @@ class SchemaManager(object):
             if default is not _MARKER:
                 return default
             raise
+        #print "getClass, found %s for %s"%(klass, name)
         return klass
 
     # Management

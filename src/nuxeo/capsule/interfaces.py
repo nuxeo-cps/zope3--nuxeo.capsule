@@ -446,6 +446,10 @@ class IProxy(IDocument):
     """Capsule proxy.
     """
 
+class IVirtualProxy(IProxy):
+    """Capsule virtual proxy.
+    """
+
 class IWorkspace(IDocument):
     """Capsule workspace, root of a tree of documents.
     """
