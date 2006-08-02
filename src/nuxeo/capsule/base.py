@@ -50,13 +50,14 @@ try:
     from Globals import InitializeClass
     from AccessControl import ClassSecurityInfo
 except ImportError:
-    def InitializeClass(arg): pass
     class ClassSecurityInfo(object):
         def declarePrivate(self, arg): pass
         def declarePublic(self, arg): pass
         def declareProtected(self, *args): pass
         def declareObjectPublic(self): pass
         def setDefaultAccess(self, arg): pass
+    def InitializeClass(klass):
+        del klass.security
 
 
 _MARKER = object()
