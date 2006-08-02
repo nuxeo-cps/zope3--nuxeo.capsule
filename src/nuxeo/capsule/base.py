@@ -433,6 +433,11 @@ class Document(ObjectBase, Acquisition.Implicit):
         """
         raise NotImplementedError
 
+    def removeFrozen(self):
+        """See `nuxeo.capsule.interfaces.IDocument`
+        """
+        raise NotImplementedError
+
     def isCheckedOut(self):
         """See `nuxeo.capsule.interfaces.IDocument`
         """

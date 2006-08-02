@@ -401,6 +401,12 @@ class IDocument(IObjectBase, IContainerBase):
         An IObjectAddedEvent event is sent on the new frozen document.
         """
 
+    def removeFrozen():
+        """Remove a frozen node.
+
+        Cannot be called on a non-frozen document.
+        """
+
     def isCheckedOut():
         """Test if the document is checked out.
         """
@@ -423,12 +429,6 @@ class IDocument(IObjectBase, IContainerBase):
         The paths are relative to the JCR workspace root.
         """
 
-    # def restore(version_or_label)
-
-    # def getVersionHistory()
-
-    # def getBaseVersion()
-
 
 class IVersionHistory(IDocument):
     """Capsule version history.
@@ -442,9 +442,27 @@ class IFrozenDocument(IDocument):
     """Capsule frozen document.
     """
 
+    def getVersionableDocument():
+        """Get the workspace versionable document for this frozen.
+
+        Returns an acquisition-wrapped document.
+        """
+
+    def getVersionName():
+        """Get application-specific version name.
+
+        Never used by the framework, for application only.
+        """
+
 class IProxy(IDocument):
     """Capsule proxy.
     """
+
+    def getVersionName():
+        """Get application-specific version name.
+
+        Never used by the framework, for application only.
+        """
 
 class IVirtualProxy(IProxy):
     """Capsule virtual proxy.
