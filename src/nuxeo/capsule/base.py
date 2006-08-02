@@ -43,6 +43,21 @@ from nuxeo.capsule.interfaces import IResource
 from nuxeo.capsule.interfaces import IBlob
 from nuxeo.capsule.interfaces import IReference
 
+# Zope 2
+View = 'View'
+ModifyPortalContent = 'Modify portal content'
+try:
+    from Globals import InitializeClass
+    from AccessControl import ClassSecurityInfo
+except ImportError:
+    def InitializeClass(arg): pass
+    class ClassSecurityInfo(object):
+        def declarePrivate(self, arg): pass
+        def declarePublic(self, arg): pass
+        def declareProtected(self, *args): pass
+        def declareObjectPublic(self): pass
+        def setDefaultAccess(self, arg): pass
+
 
 _MARKER = object()
 
@@ -56,6 +71,7 @@ class ObjectBase(Persistent):
     python simple type, or an IProperty.
     """
     zope.interface.implements(IObjectBase)
+    security = ClassSecurityInfo()
 
     __parent__ = None
 
@@ -67,21 +83,25 @@ class ObjectBase(Persistent):
     def _setSchema(self, schema):
         self._schema = schema
 
+    security.declarePrivate('getSchema')
     def getSchema(self):
         """See `nuxeo.capsule.interfaces.IObjectBase`
         """
         return self._schema
 
+    security.declareProtected(View, 'getTypeName')
     def getTypeName(self):
         """See `nuxeo.capsule.interfaces.IObjectBase`
         """
         return self.getSchema().getName()
 
+    security.declareProtected(View, 'getProperties')
     def getProperties(self):
         """See `nuxeo.capsule.interfaces.IObjectBase`
         """
         return self._props.copy()
 
+    security.declareProtected(View, 'getProperty')
     def getProperty(self, name, default=_MARKER):
         """See `nuxeo.capsule.interfaces.IObjectBase`
         """
@@ -92,11 +112,13 @@ class ObjectBase(Persistent):
                 return default
             raise
 
+    security.declareProtected(View, 'hasProperty')
     def hasProperty(self, name):
         """See `nuxeo.capsule.interfaces.IObjectBase`
         """
         return name in self._props
 
+    security.declareProtected(ModifyPortalContent, 'setProperty')
     def setProperty(self, name, value):
         """See `nuxeo.capsule.interfaces.IObjectBase`
         """
@@ -107,6 +129,8 @@ class ObjectBase(Persistent):
         else:
             self._p_changed = True
             self._props[name] = value
+
+InitializeClass(ObjectBase)
 
 
 class ContainerBase(Persistent):
@@ -130,6 +154,7 @@ class ContainerBase(Persistent):
     If child loading is not lazy, _lazy and _missing are None.
     """
     zope.interface.implements(IContainerBase)
+    security = ClassSecurityInfo()
 
     __parent__ = None
     _lazy = None
@@ -150,6 +175,7 @@ class ContainerBase(Persistent):
         path = '/'.join(self._getPath(True))
         return '<%s at %s>' % (self.__class__.__name__, path)
 
+    security.declarePrivate('getChild')
     def getChild(self, name, default=_MARKER):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
@@ -170,11 +196,13 @@ class ContainerBase(Persistent):
         """
         return self._children[name]
 
+    security.declarePrivate('getChildren')
     def getChildren(self):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         return iter(self)
 
+    security.declareProtected(View, 'keys')
     def keys(self):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
@@ -191,6 +219,7 @@ class ContainerBase(Persistent):
         else:
             return (self._children[k] for k in self._order)
 
+    security.declareProtected(View, 'hasChild')
     def hasChild(self, name):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
@@ -202,16 +231,19 @@ class ContainerBase(Persistent):
     def __len__(self):
         return len(self._children)
 
+    security.declareProtected(View, 'hasChildren')
     def hasChildren(self):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         return bool(self._children)
 
+    security.declarePrivate('addChild')
     def addChild(self, name, type_name):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         raise NotImplementedError("Must be subclassed")
 
+    security.declareProtected(ModifyPortalContent, 'removeChild')
     def removeChild(self, name):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
@@ -226,6 +258,7 @@ class ContainerBase(Persistent):
         """
         self.removeChild(name)
 
+    security.declareProtected(ModifyPortalContent, 'clear')
     def clear(self):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
@@ -233,6 +266,7 @@ class ContainerBase(Persistent):
         if self._order is not None:
             self._order = []
 
+    security.declareProtected(ModifyPortalContent, 'reorder')
     def reorder(self, names):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
@@ -243,19 +277,24 @@ class ContainerBase(Persistent):
                              (self._order, names))
         self._order = list(names)
 
+InitializeClass(ContainerBase)
+
 
 class Children(ContainerBase):
     """Holder of children nodes.
     """
     zope.interface.implements(IChildren)
+    security = ClassSecurityInfo()
 
     def __init__(self, name, schema=None):
         assert name == 'ecm:children', name
         ContainerBase.__init__(self, 'ecm:children')
 
+    security.declareProtected(View, 'getName')
     def getName(self):
         return self.__name__
 
+    security.declareProtected(View, 'getTypeName')
     def getTypeName(self):
         """See `nuxeo.capsule.interfaces.IChildren`
         """
@@ -269,6 +308,8 @@ class Children(ContainerBase):
             return ppath + (self.__name__,)
         else:
             return ppath
+
+InitializeClass(Children)
 
 
 class Document(ObjectBase, Acquisition.Implicit):
@@ -289,6 +330,7 @@ class Document(ObjectBase, Acquisition.Implicit):
     persistent subobject.
     """
     zope.interface.implements(IDocument)
+    security = ClassSecurityInfo()
 
     # Derived __init__ must initialize _children
     _children = None
@@ -311,16 +353,19 @@ class Document(ObjectBase, Acquisition.Implicit):
 
     # API
 
+    security.declareProtected(View, 'getName')
     def getName(self):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
         return self.__name__
 
+    security.declareProtected(View, 'getUUID')
     def getUUID(self):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
         raise NotImplementedError
 
+    security.declareProtected(View, 'getParent')
     def getParent(self):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
@@ -333,6 +378,7 @@ class Document(ObjectBase, Acquisition.Implicit):
 
     ##### Children, delegating to _children
 
+    security.declarePrivate('getChild')
     def getChild(self, name, default=_MARKER):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
@@ -346,11 +392,13 @@ class Document(ObjectBase, Acquisition.Implicit):
         """
         return self._children[name]
 
+    security.declarePrivate('getChildren')
     def getChildren(self):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         return self._children.getChildren()
 
+    security.declareProtected(View, 'keys')
     def keys(self):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
@@ -359,6 +407,7 @@ class Document(ObjectBase, Acquisition.Implicit):
     def __iter__(self):
         return iter(self._children)
 
+    security.declareProtected(View, 'hasChild')
     def hasChild(self, name):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
@@ -370,16 +419,19 @@ class Document(ObjectBase, Acquisition.Implicit):
     def __len__(self):
         return len(self._children)
 
+    security.declareProtected(View, 'hasChildren')
     def hasChildren(self):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         return self._children.hasChildren()
 
+    security.declarePrivate('addChild')
     def addChild(self, name, type_name):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         return self._children.addChild(name, type_name)
 
+    security.declareProtected(ModifyPortalContent, 'removeChild')
     def removeChild(self, name):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
@@ -390,11 +442,13 @@ class Document(ObjectBase, Acquisition.Implicit):
         """
         del self._children[name]
 
+    security.declareProtected(ModifyPortalContent, 'clear')
     def clear(self):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
         self._children.clear()
 
+    security.declareProtected(ModifyPortalContent, 'reorder')
     def reorder(self, names):
         """See `nuxeo.capsule.interfaces.IContainerBase`
         """
@@ -402,11 +456,13 @@ class Document(ObjectBase, Acquisition.Implicit):
 
     ##### Move / Copy
 
+    security.declarePrivate('moveDocument')
     def moveDocument(self, destination, name):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
         raise NotImplementedError
 
+    security.declarePrivate('copyDocument')
     def copyDocument(self, destination, name):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
@@ -423,16 +479,19 @@ class Document(ObjectBase, Acquisition.Implicit):
 
     ##### Versioning
 
+    security.declarePrivate('restore')
     def restore(self, versionName=''):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
         raise NotImplementedError
 
+    security.declarePrivate('checkpoint')
     def checkpoint(self):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
         raise NotImplementedError
 
+    security.declareProtected(ModifyPortalContent, 'removeFrozen')
     def removeFrozen(self):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
@@ -445,15 +504,19 @@ class Document(ObjectBase, Acquisition.Implicit):
 
     ##### Search
 
+    security.declarePrivate('locateUUID')
     def locateUUID(self, uuid):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
         raise NotImplementedError
 
+    security.declarePrivate('searchProperty')
     def searchProperty(self, prop_name, value):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
         raise NotImplementedError
+
+InitializeClass(Document)
 
 
 class Workspace(Document):
@@ -467,6 +530,7 @@ class Property(Persistent):
 
     A property has its own individual persistence in the storage.
     """
+    security = ClassSecurityInfo()
 
     __name__ = None
     __parent__ = None
@@ -487,15 +551,19 @@ class Property(Persistent):
         path = '/'.join(self._getPath(True))
         return '<%s at %s>' % (self.__class__.__name__, path)
 
+    security.declarePrivate('setDTO')
     def setDTO(self, value):
         raise NotImplementedError
 
+    security.declarePrivate('getDTO')
     def getDTO(self):
         raise NotImplementedError
 
     @staticmethod
     def emptyDTO(iface, default):
         return default
+
+InitializeClass(Property)
 
 
 class ObjectProperty(ObjectBase, Property):
@@ -554,6 +622,7 @@ class ListProperty(ContainerProperty):
     Properties are stored as ordered subobjects.
     """
     zope.interface.implements(IListProperty)
+    security = ClassSecurityInfo()
 
     def __init__(self, name, schema):
         ContainerProperty.__init__(self, name, schema)
@@ -570,11 +639,13 @@ class ListProperty(ContainerProperty):
     def _setValueSchema(self, schema):
         self._value_schema = schema
 
+    security.declarePrivate('getValueSchema')
     def getValueSchema(self):
         """See `nuxeo.capsule.interfaces.IListProperty`
         """
         return self._value_schema
 
+    security.declarePrivate('addValue')
     def addValue(self):
         """See `nuxeo.capsule.interfaces.IListProperty`
         """
@@ -643,6 +714,8 @@ class ListProperty(ContainerProperty):
         """See `nuxeo.capsule.interfaces.IListProperty`
         """
         return value in self._children
+
+InitializeClass(ListProperty)
 
 
 CONTENT_TYPE_MATCHER = re.compile('([^;\s]+)\s*(?:;\s*charset=([^\s]+)\s*)?$',
@@ -808,10 +881,10 @@ class Reference(object):
     This is the DTO of a JCR Reference property.
     """
     zope.interface.implements(IReference)
+    security = ClassSecurityInfo()
 
-    # Zope 2 security
-    __roles__ = None # ACCESS_PUBLIC
-    __allow_access_to_unprotected_subobjects__ = True
+    security.declareObjectPublic()
+    security.setDefaultAccess('allow')
 
     def __init__(self, uuid):
         self._target = uuid
@@ -828,3 +901,5 @@ class Reference(object):
         if not isinstance(other, Reference):
             return 1
         return cmp(self._target, other.getTargetUUID())
+
+InitializeClass(Reference)
