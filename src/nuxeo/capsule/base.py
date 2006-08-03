@@ -492,7 +492,7 @@ class Document(ObjectBase, Acquisition.Implicit):
         """
         raise NotImplementedError
 
-    security.declareProtected(ModifyPortalContent, 'removeFrozen')
+    security.declarePrivate('removeFrozen')
     def removeFrozen(self):
         """See `nuxeo.capsule.interfaces.IDocument`
         """
