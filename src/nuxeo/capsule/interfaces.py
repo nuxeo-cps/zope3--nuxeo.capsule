@@ -442,12 +442,6 @@ class IFrozenDocument(IDocument):
     """Capsule frozen document.
     """
 
-    def getVersionableDocument():
-        """Get the workspace versionable document for this frozen.
-
-        Returns an acquisition-wrapped document.
-        """
-
     def getVersionName():
         """Get application-specific version name.
 
